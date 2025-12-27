@@ -1,24 +1,40 @@
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import {
+  OrbitControls,
+  FirstPersonControls,
+  MeshDistortMaterial,
+  Environment,
+} from "@react-three/drei";
+import { Person } from "./3D-models/person";
 
 function Scene() {
   return (
     <>
+      <Environment
+        background={true}
+        preset="forest"
+        backgroundBlurriness={0.1}
+        ground={{ height: 5, radius: 50, scale: 100 }}
+      />
       <ambientLight intensity={0.3} />
       <directionalLight position={[5, 5, 5]} intensity={1} />
-      <mesh position={[-2.5, 0, 0]}>
+      <mesh position={[-2.5, 2, 0]}>
         <sphereGeometry args={[0.8, 32, 32]} />
-        <meshStandardMaterial color="cyan" />
+        {/* <meshStandardMaterial color="cyan" /> */}
+        <MeshDistortMaterial color="cyan" distort={0.6} speed={2} />
       </mesh>
-      <mesh position={[0, 0, 0]}>
-        <sphereGeometry args={[1, 32, 32]} />
-        <meshStandardMaterial color="hotpink" />
-      </mesh>
-      <mesh position={[2.5, 0, 0]}>
+      <Person position={[0, 0, 0]} scale={2} />
+      <mesh position={[2.5, 2, 0]}>
         <sphereGeometry args={[0.8, 32, 32]} />
-        <meshStandardMaterial color="yellow" />
+        {/* <meshStandardMaterial color="yellow" /> */}
+        <MeshDistortMaterial color="hotpink" distort={0.6} speed={2} />
       </mesh>
+      <FirstPersonControls
+        movementSpeed={5}
+        lookSpeed={0.1}
+        activeLook={false}
+      />
       <OrbitControls />
     </>
   );
@@ -48,7 +64,7 @@ export const Experience = forwardRef<ExperienceRef, ExperienceProps>(
     return (
       <div
         ref={containerRef}
-        style={{ width, height, backgroundColor: "#333" }}
+        style={{ width, height, backgroundColor: "#000000ff" }}
       >
         <Canvas>
           <Scene />

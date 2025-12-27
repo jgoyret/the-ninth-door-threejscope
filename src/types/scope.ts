@@ -3,6 +3,12 @@ export interface PromptItem {
   weight: number;
 }
 
+export interface LoraAdapter {
+  path: string;
+  scale: number;
+  merge_mode: string;
+}
+
 export interface PipelineLoadParams {
   height: number;
   width: number;
@@ -10,6 +16,7 @@ export interface PipelineLoadParams {
   quantization: string | null;
   vace_enabled: boolean;
   lora_merge_mode: string;
+  loras?: LoraAdapter[];
 }
 
 export interface PipelineStatus {

@@ -18,6 +18,7 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
   const [error, setError] = useState<string | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const sessionIdRef = useRef<string | null>(null);
+  const dataChannelRef = useRef<RTCDataChannel | null>(null);
 
   const connect = useCallback(
     async (
@@ -68,7 +69,11 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
         // 5. Create peer connection
         setStatus("connecting");
         const pc = new RTCPeerConnection({
-          iceServers: iceData.iceServers,
+          iceServers: iceData.iceServers.map((server) => ({
+            urls: server.urls,
+            username: server.username ?? undefined,
+            credential: server.credential ?? undefined,
+          })),
         });
         pcRef.current = pc;
 
@@ -112,7 +117,20 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
         });
 
         // 7. Create data channel
-        pc.createDataChannel("data");
+        const dataChannel = pc.createDataChannel("data");
+        dataChannelRef.current = dataChannel;
+
+        dataChannel.onopen = () => {
+          console.log("📡 Data channel opened");
+        };
+
+        dataChannel.onclose = () => {
+          console.log("📡 Data channel closed");
+        };
+
+        dataChannel.onerror = (error) => {
+          console.error("📡 Data channel error:", error);
+        };
 
         // 8. Create and send offer
         const offer = await pc.createOffer();
@@ -178,8 +196,28 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
       pcRef.current = null;
     }
     sessionIdRef.current = null;
+    dataChannelRef.current = null;
     setStatus("idle");
     setError(null);
+  }, []);
+
+  const updatePrompt = useCallback((prompt: string, weight: number = 100) => {
+    if (!dataChannelRef.current) {
+      console.error("Data channel not available");
+      return;
+    }
+
+    if (dataChannelRef.current.readyState !== "open") {
+      console.error("Data channel not open");
+      return;
+    }
+
+    const message = {
+      prompts: [{ text: prompt, weight }],
+    };
+
+    dataChannelRef.current.send(JSON.stringify(message));
+    console.log("📤 Sent prompt update:", message);
   }, []);
 
   return {
@@ -188,5 +226,6 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
     isConnected: status === "connected",
     connect,
     disconnect,
+    updatePrompt,
   };
 }

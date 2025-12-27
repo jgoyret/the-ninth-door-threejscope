@@ -71,4 +71,11 @@ export const DEFAULT_PIPELINE_PARAMS: PipelineLoadParams = {
   quantization: null,
   vace_enabled: false,
   lora_merge_mode: "permanent_merge",
+  loras: [
+    {
+      path: "/workspace/models/lora/kxsr_WAN1-3B_cinematic_chase.safetensors",
+      scale: 1,
+      merge_mode: "permanent_merge",
+    },
+  ],
 };
