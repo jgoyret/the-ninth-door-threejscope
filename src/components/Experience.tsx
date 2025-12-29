@@ -3,14 +3,18 @@ import { Canvas } from "@react-three/fiber";
 import {
   OrbitControls,
   FirstPersonControls,
-  MeshDistortMaterial,
   Environment,
 } from "@react-three/drei";
-import { Person } from "./3D-models/person";
+import OniricHallway from "./3D-models/OniricHallway";
+import type { OniricHallwayRef } from "./3D-models/OniricHallway";
+import DancingSphere from "./crazy-primitives/DancingSphere";
 
 function Scene() {
+  const hallwayRef = useRef<OniricHallwayRef>(null);
+
   return (
     <>
+      {/* Lighting and environment */}
       <Environment
         background={true}
         preset="forest"
@@ -19,17 +23,25 @@ function Scene() {
       />
       <ambientLight intensity={0.3} />
       <directionalLight position={[5, 5, 5]} intensity={1} />
-      <mesh position={[-2.5, 2, 0]}>
-        <sphereGeometry args={[0.8, 32, 32]} />
-        {/* <meshStandardMaterial color="cyan" /> */}
-        <MeshDistortMaterial color="cyan" distort={0.6} speed={2} />
-      </mesh>
-      <Person position={[0, 0, 0]} scale={2} />
-      <mesh position={[2.5, 2, 0]}>
-        <sphereGeometry args={[0.8, 32, 32]} />
-        {/* <meshStandardMaterial color="yellow" /> */}
-        <MeshDistortMaterial color="hotpink" distort={0.6} speed={2} />
-      </mesh>
+
+      {/* Objects */}
+      <DancingSphere
+        position={[-2.5, 5, 0]}
+        color="cyan"
+        distort={0.6}
+        speed={2}
+        onClick={() => hallwayRef.current?.openDoor()}
+      />
+      <DancingSphere
+        position={[2.5, 5, 0]}
+        color="hotpink"
+        distort={0.6}
+        speed={2}
+        onClick={() => hallwayRef.current?.closeDoor()}
+      />
+      <OniricHallway ref={hallwayRef} />
+
+      {/* Controls */}
       <FirstPersonControls
         movementSpeed={5}
         lookSpeed={0.1}
