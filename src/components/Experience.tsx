@@ -1,16 +1,20 @@
-import { forwardRef, useImperativeHandle, useRef } from "react";
+import { forwardRef, useImperativeHandle, useRef, useCallback } from "react";
 import { Canvas } from "@react-three/fiber";
-import {
-  OrbitControls,
-  FirstPersonControls,
-  Environment,
-} from "@react-three/drei";
+import { Environment } from "@react-three/drei";
+import { Physics } from "@react-three/rapier";
 import OniricHallway from "./3D-models/OniricHallway";
-import type { OniricHallwayRef } from "./3D-models/OniricHallway";
-import DancingSphere from "./crazy-primitives/DancingSphere";
+import Player from "./Player";
+import type { Object3D } from "three";
 
 function Scene() {
-  const hallwayRef = useRef<OniricHallwayRef>(null);
+  const handleInteract = useCallback((object: Object3D | null) => {
+    if (!object) return;
+
+    // Si tiene función onInteract en userData, ejecutarla
+    if (object.userData?.onInteract) {
+      object.userData.onInteract();
+    }
+  }, []);
 
   return (
     <>
@@ -19,35 +23,21 @@ function Scene() {
         background={true}
         preset="forest"
         backgroundBlurriness={0.1}
-        ground={{ height: 5, radius: 50, scale: 100 }}
       />
       <ambientLight intensity={0.3} />
-      <directionalLight position={[5, 5, 5]} intensity={1} />
+      <directionalLight position={[5, 5, -5]} intensity={1} />
 
-      {/* Objects */}
-      <DancingSphere
-        position={[-2.5, 5, 0]}
-        color="cyan"
-        distort={0.6}
-        speed={2}
-        onClick={() => hallwayRef.current?.openDoor()}
-      />
-      <DancingSphere
-        position={[2.5, 5, 0]}
-        color="hotpink"
-        distort={0.6}
-        speed={2}
-        onClick={() => hallwayRef.current?.closeDoor()}
-      />
-      <OniricHallway ref={hallwayRef} />
-
-      {/* Controls */}
-      <FirstPersonControls
-        movementSpeed={5}
-        lookSpeed={0.1}
-        activeLook={false}
-      />
-      <OrbitControls />
+      <Physics gravity={[0, -9.81, 0]}>
+        {/* Player */}
+        <Player
+          speed={1}
+          spawn={[2.5, 5, 0]}
+          interactionDistance={3}
+          onInteract={handleInteract}
+        />
+        {/* Hallway con puertas interactivas */}
+        <OniricHallway />
+      </Physics>
     </>
   );
 }

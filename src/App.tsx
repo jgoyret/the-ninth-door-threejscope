@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Experience, type ExperienceRef } from "./components/Experience";
 import { useScopeConnection } from "./hooks/useScopeConnection";
+import { GameProvider } from "./game";
 
 const STATUS_LABELS: Record<string, string> = {
   idle: "Ready",
@@ -80,7 +81,9 @@ function App() {
           <h3 style={{ margin: "0 0 10px 0", textAlign: "center" }}>
             Input (Three.js)
           </h3>
-          <Experience ref={experienceRef} width={512} height={512} />
+          <GameProvider updatePrompt={updatePrompt} isConnected={isConnected}>
+            <Experience ref={experienceRef} width={512} height={512} />
+          </GameProvider>
         </div>
         <div>
           <h3 style={{ margin: "0 0 10px 0", textAlign: "center" }}>
