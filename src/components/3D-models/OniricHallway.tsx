@@ -9,11 +9,13 @@ import React, {
   useState,
   useRef,
 } from "react";
-import { useGLTF } from "@react-three/drei";
+import { useGLTF, Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import type { GLTF } from "three-stdlib";
 import { RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { useGame } from "../../game";
+import { useGameUI } from "../../stores/useGameUI";
+import { useDoorSequence } from "../../stores/useDoorSequence";
 
 export interface OniricHallwayRef {
   openDoor: () => void;
@@ -44,18 +46,38 @@ type GLTFResult = GLTF & {
 
 // Componente Door reutilizable - cada instancia tiene su propio estado
 interface DoorProps {
-  index: number;
+  doorNumber: number; // 1-9
   position: [number, number, number];
   rotation?: [number, number, number];
   nodes: GLTFResult["nodes"];
   materials: GLTFResult["materials"];
 }
 
-function Door({ index, position, rotation = [0, 0, 0], nodes, materials }: DoorProps) {
+function Door({
+  doorNumber,
+  position,
+  rotation = [0, 0, 0],
+  nodes,
+  materials,
+}: DoorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const doorMeshRef = useRef<THREE.Group>(null);
   const doorRbRef = useRef<RapierRigidBody>(null);
   const { onDoorOpen, canInteract } = useGame();
+  const showMessage = useGameUI((state) => state.showMessage);
+
+  // Sistema de secuencia de puertas
+  const isDoorUnlocked = useDoorSequence((state) => state.isDoorUnlocked);
+  const openDoorInSequence = useDoorSequence((state) => state.openDoor);
+  const getNextDoor = useDoorSequence((state) => state.getNextDoor);
+
+  // Refs para acceso estable en callbacks
+  const isOpenRef = useRef(isOpen);
+  const canInteractRef = useRef(canInteract);
+  const doorNumberRef = useRef(doorNumber);
+  isOpenRef.current = isOpen;
+  canInteractRef.current = canInteract;
+  doorNumberRef.current = doorNumber;
 
   // Ángulo actual de la puerta (para animación suave)
   const currentAngle = useRef(0);
@@ -67,20 +89,17 @@ function Door({ index, position, rotation = [0, 0, 0], nodes, materials }: DoorP
 
   // Animación y sincronización del collider
   useFrame((_, delta) => {
-    // Lerp del ángulo de la puerta
-    const openAngle = -Math.PI / 1.1; // 90 grados
+    const openAngle = -Math.PI / 1.1;
     targetAngle.current = isOpen ? openAngle : 0;
     currentAngle.current = THREE.MathUtils.lerp(
       currentAngle.current,
       targetAngle.current,
-      delta // velocidad de la animación
+      delta
     );
 
-    // Aplicar rotación al mesh visual
     if (doorMeshRef.current) {
       doorMeshRef.current.rotation.y = currentAngle.current;
 
-      // Sincronizar collider con la posición del mesh
       if (doorRbRef.current) {
         doorMeshRef.current.getWorldPosition(tempPosition.current);
         doorMeshRef.current.getWorldQuaternion(tempQuaternion.current);
@@ -91,24 +110,53 @@ function Door({ index, position, rotation = [0, 0, 0], nodes, materials }: DoorP
   });
 
   const toggleDoor = () => {
-    // Solo permitir interacción si el stream está conectado
-    if (!canInteract) return;
+    // Primero verificar si el stream está conectado
+    if (!canInteract) {
+      showMessage("The door is locked", "warning");
+      return;
+    }
 
-    setIsOpen((prev) => {
-      const newState = !prev;
-      // Cuando se abre, enviar el prompt
-      if (newState) {
-        onDoorOpen(index);
-      }
-      return newState;
-    });
+    // Verificar si esta puerta está desbloqueada en la secuencia
+    if (!isDoorUnlocked(doorNumber)) {
+      const nextDoor = getNextDoor();
+      showMessage(
+        `Door ${doorNumber} is locked. Find door ${nextDoor} first.`,
+        "warning"
+      );
+      return;
+    }
+
+    // Abrir la puerta
+    const opened = openDoorInSequence(doorNumber);
+    if (opened) {
+      setIsOpen(true);
+      onDoorOpen(doorNumber - 1); // onDoorOpen usa índice 0-based
+    }
   };
+
+  // Chequear si la puerta está desbloqueada para el prompt
+  const isUnlocked = isDoorUnlocked(doorNumber);
 
   return (
     <group position={position} rotation={rotation}>
       <group
-        userData={{ interactable: true, type: "door", onInteract: toggleDoor }}
+        userData={{
+          interactable: true,
+          type: "door",
+          doorNumber,
+          onInteract: toggleDoor,
+          getActionPrompt: () => {
+            if (isOpenRef.current) return null;
+            if (!canInteractRef.current) return null;
+            const unlocked = isDoorUnlocked(doorNumberRef.current);
+            return unlocked
+              ? `Open door ${doorNumberRef.current} with E`
+              : null;
+          },
+        }}
       >
+        {/* Número de la puerta */}
+
         {/* Mesh visual de la puerta - se rota */}
         <group
           ref={doorMeshRef}
@@ -116,6 +164,18 @@ function Door({ index, position, rotation = [0, 0, 0], nodes, materials }: DoorP
           rotation={[0, 0, Math.PI]}
           scale={-1}
         >
+          <Text
+            position={[-0.4, 0.6, 0.042745]}
+            scale={[-1, 1, 1]}
+            fontSize={0.25}
+            color={isUnlocked && canInteract ? "#00ff00" : "#888888"}
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.004}
+            outlineColor="#000000"
+          >
+            {doorNumber}
+          </Text>
           <mesh
             castShadow
             receiveShadow
@@ -193,7 +253,7 @@ const OniricHallway = forwardRef<
         {DOOR_POSITIONS.map((door, index) => (
           <Door
             key={index}
-            index={index}
+            doorNumber={index + 1}
             position={door.position}
             rotation={door.rotation}
             nodes={nodes}

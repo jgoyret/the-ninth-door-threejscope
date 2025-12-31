@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Experience, type ExperienceRef } from "./components/Experience";
 import { useScopeConnection } from "./hooks/useScopeConnection";
 import { GameProvider } from "./game";
@@ -17,9 +17,25 @@ const STATUS_LABELS: Record<string, string> = {
 function App() {
   const experienceRef = useRef<ExperienceRef>(null);
   const outputVideoRef = useRef<HTMLVideoElement>(null);
+  const depthContainerRef = useRef<HTMLDivElement>(null);
   const [prompt, setPrompt] = useState(
     "A 3D animated scene. A **panda** sitting in the grass, looking around."
   );
+
+  // Mount depth canvas when ready
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const depthCanvas = experienceRef.current?.getDepthCanvas();
+      if (depthCanvas && depthContainerRef.current) {
+        if (!depthContainerRef.current.contains(depthCanvas)) {
+          depthContainerRef.current.appendChild(depthCanvas);
+        }
+        clearInterval(interval);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const { status, error, isConnected, connect, disconnect, updatePrompt } =
     useScopeConnection({
@@ -53,7 +69,9 @@ function App() {
     updatePrompt(prompt);
   }
 
-  const statusText = error ? `Error: ${error}` : STATUS_LABELS[status] || status;
+  const statusText = error
+    ? `Error: ${error}`
+    : STATUS_LABELS[status] || status;
 
   return (
     <div
@@ -85,6 +103,15 @@ function App() {
             <Experience ref={experienceRef} width={512} height={512} />
           </GameProvider>
         </div>
+        {/* <div>
+          <h3 style={{ margin: "0 0 10px 0", textAlign: "center" }}>
+            Depth Map
+          </h3>
+          <div
+            ref={depthContainerRef}
+            style={{ width: 512, height: 512, backgroundColor: "#333" }}
+          />
+        </div> */}
         <div>
           <h3 style={{ margin: "0 0 10px 0", textAlign: "center" }}>
             Output (Processed)

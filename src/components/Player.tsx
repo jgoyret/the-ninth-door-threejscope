@@ -175,11 +175,11 @@ const Player = forwardRef<PlayerRef, PlayerProps>(function Player(
 
     const currentVel = rbRef.current.linvel();
 
-    const isGrounded = Math.abs(currentVel.y) < 0.5;
+    // const isGrounded = Math.abs(currentVel.y) < 0.5;
     let newVelY = currentVel.y;
-    if (isControlActive && keys.current["Space"] && isGrounded) {
-      newVelY = 7;
-    }
+    // if (isControlActive && keys.current["Space"] && isGrounded) {
+    //   newVelY = 7;
+    // }
 
     rbRef.current.setLinvel({ x: vx, y: newVelY, z: vz }, true);
 
