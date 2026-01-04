@@ -201,7 +201,7 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
     setError(null);
   }, []);
 
-  const updatePrompt = useCallback((prompt: string, weight: number = 100) => {
+  const updatePrompt = useCallback((prompt: string, options?: { weight?: number; vaceScale?: number }) => {
     if (!dataChannelRef.current) {
       console.error("Data channel not available");
       return;
@@ -212,12 +212,16 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
       return;
     }
 
-    const message = {
-      prompts: [{ text: prompt, weight }],
+    const message: Record<string, unknown> = {
+      prompts: [{ text: prompt, weight: options?.weight ?? 100 }],
     };
 
+    if (options?.vaceScale !== undefined) {
+      message.vace_context_scale = options.vaceScale;
+    }
+
     dataChannelRef.current.send(JSON.stringify(message));
-    console.log("📤 Sent prompt update:", message);
+    console.log("📤 Sent update:", message);
   }, []);
 
   return {

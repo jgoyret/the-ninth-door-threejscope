@@ -10,7 +10,7 @@ const GameContext = createContext<GameContextValue | null>(null);
 
 interface GameProviderProps {
   children: ReactNode;
-  updatePrompt: (prompt: string, weight?: number) => void;
+  updatePrompt: (prompt: string, options?: { weight?: number; vaceScale?: number }) => void;
   isConnected: boolean;
 }
 

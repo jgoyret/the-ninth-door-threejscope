@@ -1,7 +1,12 @@
-import { useRef, useState, useEffect } from "react";
-import { Experience, type ExperienceRef } from "./components/Experience";
+import { useRef, useState, useEffect, useCallback } from "react";
+import {
+  Experience,
+  type ExperienceRef,
+  type StreamSource,
+} from "./components/Experience";
 import { useScopeConnection } from "./hooks/useScopeConnection";
 import { GameProvider } from "./game";
+import { useDebugGUI, type DebugParams } from "./hooks/useDebugGUI";
 
 const STATUS_LABELS: Record<string, string> = {
   idle: "Ready",
@@ -19,8 +24,22 @@ function App() {
   const outputVideoRef = useRef<HTMLVideoElement>(null);
   const depthContainerRef = useRef<HTMLDivElement>(null);
   const [prompt, setPrompt] = useState(
-    "A 3D animated scene. A **panda** sitting in the grass, looking around."
+    "A magical forest. Elder creatures are guideing you."
   );
+  const [depthFar, setDepthFar] = useState(30);
+  const [streamSource, setStreamSource] = useState<StreamSource>("threejs");
+  const [vaceScale, setVaceScale] = useState(0.5);
+
+  const handleDebugChange = useCallback((params: DebugParams) => {
+    setDepthFar(params.depthFar);
+    setStreamSource(params.streamSource);
+    setVaceScale(params.vaceScale);
+  }, []);
+
+  useDebugGUI({
+    initialValues: { depthFar, streamSource, vaceScale },
+    onChange: handleDebugChange,
+  });
 
   // Mount depth canvas when ready
   useEffect(() => {
@@ -47,7 +66,7 @@ function App() {
     });
 
   async function handleStart() {
-    const stream = experienceRef.current?.getStream(30);
+    const stream = experienceRef.current?.getStream(30, streamSource);
     if (!stream) {
       console.error("Could not get canvas stream");
       return;
@@ -66,7 +85,7 @@ function App() {
   }
 
   function handleUpdatePrompt() {
-    updatePrompt(prompt);
+    updatePrompt(prompt, { vaceScale });
   }
 
   const statusText = error
@@ -76,42 +95,49 @@ function App() {
   return (
     <div
       style={{
-        height: "100vh",
+        minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         color: "white",
         fontFamily: "system-ui",
         backgroundColor: "#0a0a0a",
+        overflow: "auto",
       }}
     >
       {/* Video panels */}
       <div
         style={{
-          flex: 1,
           display: "flex",
+          flexDirection: "column",
           gap: 20,
           padding: 20,
-          justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <div>
-          <h3 style={{ margin: "0 0 10px 0", textAlign: "center" }}>
-            Input (Three.js)
-          </h3>
-          <GameProvider updatePrompt={updatePrompt} isConnected={isConnected}>
-            <Experience ref={experienceRef} width={512} height={512} />
-          </GameProvider>
+        <div className="flex-gap" style={{ display: "flex", gap: 20 }}>
+          <div>
+            <h3 style={{ margin: "0 0 10px 0", textAlign: "center" }}>
+              Input (Three.js)
+            </h3>
+            <GameProvider updatePrompt={updatePrompt} isConnected={isConnected}>
+              <Experience
+                ref={experienceRef}
+                width={640}
+                height={352}
+                depthFar={depthFar}
+              />
+            </GameProvider>
+          </div>
+          <div>
+            <h3 style={{ margin: "0 0 10px 0", textAlign: "center" }}>
+              Depth Map
+            </h3>
+            <div
+              ref={depthContainerRef}
+              style={{ width: 640, height: 352, backgroundColor: "#333" }}
+            />
+          </div>
         </div>
-        {/* <div>
-          <h3 style={{ margin: "0 0 10px 0", textAlign: "center" }}>
-            Depth Map
-          </h3>
-          <div
-            ref={depthContainerRef}
-            style={{ width: 512, height: 512, backgroundColor: "#333" }}
-          />
-        </div> */}
         <div>
           <h3 style={{ margin: "0 0 10px 0", textAlign: "center" }}>
             Output (Processed)
@@ -121,7 +147,7 @@ function App() {
             autoPlay
             playsInline
             muted
-            style={{ width: 512, height: 512, backgroundColor: "#333" }}
+            style={{ width: 640, height: 352, backgroundColor: "#333" }}
           />
         </div>
       </div>

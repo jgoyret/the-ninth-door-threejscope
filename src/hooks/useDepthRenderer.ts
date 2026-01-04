@@ -5,6 +5,8 @@ import * as THREE from "three";
 interface UseDepthRendererOptions {
   width: number;
   height: number;
+  near?: number;
+  far?: number;
 }
 
 // Shader para visualizar el depth buffer
@@ -35,7 +37,7 @@ const postFragmentShader = `
   }
 `;
 
-export function useDepthRenderer({ width, height }: UseDepthRendererOptions) {
+export function useDepthRenderer({ width, height, near, far }: UseDepthRendererOptions) {
   const { gl, scene, camera } = useThree();
 
   const renderTargetRef = useRef<THREE.WebGLRenderTarget | null>(null);
@@ -120,10 +122,10 @@ export function useDepthRenderer({ width, height }: UseDepthRendererOptions) {
       return;
     }
 
-    // Obtener near/far de la cámara
+    // Obtener near/far (usa custom si se proporcionan, sino los de la cámara)
     const cam = camera as THREE.PerspectiveCamera;
-    postMaterial.uniforms.cameraNear.value = cam.near;
-    postMaterial.uniforms.cameraFar.value = cam.far;
+    postMaterial.uniforms.cameraNear.value = near ?? cam.near;
+    postMaterial.uniforms.cameraFar.value = far ?? cam.far;
 
     const originalRenderTarget = gl.getRenderTarget();
 

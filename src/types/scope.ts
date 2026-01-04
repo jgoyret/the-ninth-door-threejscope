@@ -15,6 +15,7 @@ export interface PipelineLoadParams {
   seed: number;
   quantization: string | null;
   vace_enabled: boolean;
+  vace_context_scale: number;
   lora_merge_mode: string;
   loras?: LoraAdapter[];
 }

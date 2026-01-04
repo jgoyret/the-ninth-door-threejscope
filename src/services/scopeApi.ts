@@ -65,11 +65,12 @@ export const scopeApi = {
 };
 
 export const DEFAULT_PIPELINE_PARAMS: PipelineLoadParams = {
-  height: 512,
-  width: 512,
+  width: 640,
+  height: 352,
   seed: 42,
   quantization: null,
-  vace_enabled: false,
+  vace_enabled: true,
+  vace_context_scale: 0.4,
   lora_merge_mode: "permanent_merge",
   loras: [
     {
