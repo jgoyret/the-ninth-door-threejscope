@@ -28,7 +28,7 @@ function App() {
   );
   const [depthFar, setDepthFar] = useState(30);
   const [streamSource, setStreamSource] = useState<StreamSource>("threejs");
-  const [vaceScale, setVaceScale] = useState(0.5);
+  const [vaceScale, setVaceScale] = useState(0.45);
 
   const handleDebugChange = useCallback((params: DebugParams) => {
     setDepthFar(params.depthFar);
@@ -74,6 +74,7 @@ function App() {
 
     await connect(stream, {
       prompts: [{ text: prompt, weight: 100 }],
+      vace_context_scale: vaceScale,
     });
   }
 

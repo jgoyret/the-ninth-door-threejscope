@@ -10,6 +10,7 @@ import * as THREE from "three";
 interface PlayerProps {
   speed?: number;
   spawn?: [number, number, number] | null;
+  initialRotation?: [number, number]; // [yaw, pitch] en radianes
   interactionDistance?: number;
   onInteract?: (object: THREE.Object3D | null) => void;
   onLookingAt?: (object: THREE.Object3D | null) => void;
@@ -20,12 +21,19 @@ export interface PlayerRef {
 }
 
 const Player = forwardRef<PlayerRef, PlayerProps>(function Player(
-  { speed = 4, spawn = null, interactionDistance = 3, onInteract, onLookingAt },
+  {
+    speed = 4,
+    spawn = null,
+    initialRotation = [1.5, 0],
+    interactionDistance = 3,
+    onInteract,
+    onLookingAt,
+  },
   ref
 ) {
   const keys = useRef<Record<string, boolean>>({});
-  const yaw = useRef(0);
-  const pitch = useRef(0);
+  const yaw = useRef(initialRotation[0]);
+  const pitch = useRef(initialRotation[1]);
   const { camera, scene } = useThree();
   const rbRef = useRef<RapierRigidBody>(null);
   const initialSpawn = useRef(spawn);

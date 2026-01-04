@@ -8,7 +8,7 @@ import {
 import { Canvas } from "@react-three/fiber";
 import { Environment } from "@react-three/drei";
 // import { OrbitControls } from "@react-three/drei";
-import { Physics } from "@react-three/rapier";
+import { Physics, RigidBody } from "@react-three/rapier";
 import OniricHallway from "./3D-models/OniricHallway";
 import Player from "./Player";
 import { GameOverlay } from "./ui/GameOverlay";
@@ -28,10 +28,12 @@ interface SceneProps {
 function BehindNinthDoor(props: any) {
   return (
     <group {...props}>
-      <mesh position={[0, -1.5, 6]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[8, 8]} />
-        <meshStandardMaterial color="white" side={2} />
-      </mesh>
+      <RigidBody type="fixed" colliders="trimesh">
+        <mesh position={[0, -1.5, 6]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[8, 8]} />
+          <meshStandardMaterial color="white" side={2} />
+        </mesh>
+      </RigidBody>
       <MetaAngel position={[0, 0, -4]} scale={10} animationSpeed={0.05} />
     </group>
   );

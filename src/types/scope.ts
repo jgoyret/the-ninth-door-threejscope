@@ -51,6 +51,7 @@ export interface InitialParameters {
   noise_controller: boolean;
   denoising_step_list: number[];
   manage_cache: boolean;
+  vace_context_scale?: number;
 }
 
 export interface WebRTCOfferRequest {
