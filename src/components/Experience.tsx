@@ -11,11 +11,12 @@ import { Environment } from "@react-three/drei";
 import { Physics, RigidBody } from "@react-three/rapier";
 import OniricHallway from "./3D-models/OniricHallway";
 import Player from "./Player";
-import { GameOverlay } from "./ui/GameOverlay";
 import { useGameUI } from "../stores/useGameUI";
 import { useDepthRenderer } from "../hooks/useDepthRenderer";
+import { useCanvasManager } from "../stores/useCanvasManager";
 import type { Object3D } from "three";
 import MetaAngel from "./3D-models/MetaAngel";
+import DancingSphere from "./crazy-primitives/DancingSphere";
 import { useDoorSequence } from "../stores/useDoorSequence";
 
 interface SceneProps {
@@ -26,6 +27,10 @@ interface SceneProps {
 }
 
 function BehindNinthDoor(props: any) {
+  const onLookingAtMetaAngel = useCanvasManager(
+    (state) => state.onLookingAtMetaAngel
+  );
+
   return (
     <group {...props}>
       <RigidBody type="fixed" colliders="trimesh">
@@ -35,6 +40,27 @@ function BehindNinthDoor(props: any) {
         </mesh>
       </RigidBody>
       <MetaAngel position={[0, 0, -4]} scale={10} animationSpeed={0.05} />
+      {/* Interactive sphere in the center of the platform */}
+      <group
+        position={[0, 0, 6]}
+        userData={{
+          interactable: true,
+          type: "dancingsphere",
+          getActionPrompt: () => "Press E to enter the dream",
+          onInteract: () => {
+            console.log("🔮 DancingSphere interacted!");
+            onLookingAtMetaAngel();
+          },
+        }}
+      >
+        <DancingSphere
+          color="magenta"
+          distort={0.4}
+          speed={3}
+          scale={0.5}
+          position={[-1, 0, 0]}
+        />
+      </group>
     </group>
   );
 }
@@ -90,7 +116,7 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
         <Player
           speed={1}
           spawn={[2.5, 5, 0]}
-          interactionDistance={1}
+          interactionDistance={5}
           onInteract={handleInteract}
           onLookingAt={handleLookingAt}
         />
@@ -162,7 +188,6 @@ export const Experience = forwardRef<ExperienceRef, ExperienceProps>(
             onDepthCanvasReady={handleDepthCanvasReady}
           />
         </Canvas>
-        <GameOverlay />
       </div>
     );
   }

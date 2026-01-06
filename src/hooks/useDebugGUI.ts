@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
 import GUI from "lil-gui";
 import type { StreamSource } from "../components/Experience";
+import { usePlayerPosition } from "../stores/usePlayerPosition";
+import { useRaycastDebug } from "../stores/useRaycastDebug";
+import { setGameStatePreset } from "../game/gameStates";
 
 export interface DebugParams {
   depthFar: number;
@@ -20,6 +23,49 @@ export function useDebugGUI({ initialValues, onChange }: UseDebugGUIOptions) {
   useEffect(() => {
     const gui = new GUI({ title: "Debug Controls" });
     guiRef.current = gui;
+
+    // Player position display
+    const positionData = { position: "0, 0, 0" };
+    const playerFolder = gui.addFolder("Player");
+    const posController = playerFolder.add(positionData, "position").name("Position").disable();
+    playerFolder.open();
+
+    // Raycast debug display
+    const raycastFolder = gui.addFolder("Raycast Debug");
+    const raycastData = {
+      hitName: "-",
+      distance: "0.00",
+      type: "-"
+    };
+    const hitNameController = raycastFolder.add(raycastData, "hitName").name("Hit Object").disable();
+    const distanceController = raycastFolder.add(raycastData, "distance").name("Distance").disable();
+    const typeController = raycastFolder.add(raycastData, "type").name("Type").disable();
+    raycastFolder.open();
+
+    // Update position and raycast every 100ms
+    const positionInterval = setInterval(() => {
+      const { x, y, z } = usePlayerPosition.getState();
+      positionData.position = `${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)}`;
+      posController.updateDisplay();
+
+      const raycast = useRaycastDebug.getState();
+      raycastData.hitName = raycast.hitName;
+      raycastData.distance = raycast.hitDistance.toFixed(2);
+      raycastData.type = raycast.hitType;
+      hitNameController.updateDisplay();
+      distanceController.updateDisplay();
+      typeController.updateDisplay();
+    }, 100);
+
+    // Game state presets
+    const gameStateFolder = gui.addFolder("Game States");
+    const stateActions = {
+      initial: () => setGameStatePreset("initial"),
+      after9door: () => setGameStatePreset("after9door"),
+    };
+    gameStateFolder.add(stateActions, "initial").name("🔄 Reset to Initial");
+    gameStateFolder.add(stateActions, "after9door").name("🚪 After 9th Door");
+    gameStateFolder.open();
 
     gui.add(paramsRef.current, "depthFar", 1, 50, 1)
       .name("Depth Far")
@@ -45,6 +91,7 @@ export function useDebugGUI({ initialValues, onChange }: UseDebugGUIOptions) {
       });
 
     return () => {
+      clearInterval(positionInterval);
       gui.destroy();
     };
   }, []);

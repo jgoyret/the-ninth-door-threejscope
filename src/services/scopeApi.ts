@@ -64,6 +64,7 @@ export const scopeApi = {
   },
 };
 
+// Base params without LoRA
 export const DEFAULT_PIPELINE_PARAMS: PipelineLoadParams = {
   width: 640,
   height: 352,
@@ -71,6 +72,12 @@ export const DEFAULT_PIPELINE_PARAMS: PipelineLoadParams = {
   quantization: null,
   vace_enabled: true,
   vace_context_scale: 0.4,
+  lora_merge_mode: "none",
+};
+
+// Params with LoRA (optional)
+export const PIPELINE_PARAMS_WITH_LORA: PipelineLoadParams = {
+  ...DEFAULT_PIPELINE_PARAMS,
   lora_merge_mode: "permanent_merge",
   loras: [
     {

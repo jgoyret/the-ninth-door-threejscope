@@ -43,7 +43,16 @@ export default function MetaAngel({ animationSpeed = 1, ...props }: MetaAngelPro
     };
   }, [actions, animationSpeed]);
   return (
-    <group ref={group} {...props} dispose={null}>
+    <group
+      ref={group}
+      {...props}
+      dispose={null}
+      userData={{
+        interactable: true,
+        type: "metaangel",
+        getActionPrompt: () => "The MetaAngel awaits...",
+      }}
+    >
       <group name="Scene">
         <group name="Armature" rotation={[Math.PI / 2, 0, 0]} scale={0.01}>
           <skinnedMesh

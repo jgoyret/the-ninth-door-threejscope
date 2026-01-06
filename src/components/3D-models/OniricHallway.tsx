@@ -16,6 +16,7 @@ import { RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { useGame } from "../../game";
 import { useGameUI } from "../../stores/useGameUI";
 import { useDoorSequence } from "../../stores/useDoorSequence";
+import { useCanvasManager } from "../../stores/useCanvasManager";
 
 export interface OniricHallwayRef {
   openDoor: () => void;
@@ -70,6 +71,10 @@ function Door({
   const isDoorUnlocked = useDoorSequence((state) => state.isDoorUnlocked);
   const openDoorInSequence = useDoorSequence((state) => state.openDoor);
   const getNextDoor = useDoorSequence((state) => state.getNextDoor);
+
+  // Canvas manager para eventos de cambio de canvas
+  const onFirstDoorOpened = useCanvasManager((state) => state.onFirstDoorOpened);
+  const onNinthDoorOpened = useCanvasManager((state) => state.onNinthDoorOpened);
 
   // Refs para acceso estable en callbacks
   const isOpenRef = useRef(isOpen);
@@ -131,6 +136,14 @@ function Door({
     if (opened) {
       setIsOpen(true);
       onDoorOpen(doorNumber - 1); // onDoorOpen usa índice 0-based
+
+      // Disparar eventos de cambio de canvas
+      if (doorNumber === 1) {
+        onFirstDoorOpened();
+      }
+      if (doorNumber === 9) {
+        onNinthDoorOpened();
+      }
     }
   };
 
