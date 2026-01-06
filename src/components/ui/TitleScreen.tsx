@@ -88,7 +88,7 @@ export function TitleScreen({ onStart }: TitleScreenProps) {
         Start
       </button>
 
-      {/* Instructions hint */}
+      {/* Powered by */}
       <p
         style={{
           position: "absolute",
@@ -99,7 +99,7 @@ export function TitleScreen({ onStart }: TitleScreenProps) {
           textTransform: "uppercase",
         }}
       >
-        WASD to move • Mouse to look • E to interact
+        powered by Daydream
       </p>
     </div>
   );

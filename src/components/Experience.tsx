@@ -4,6 +4,7 @@ import {
   useRef,
   useCallback,
   useEffect,
+  useState,
 } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Environment } from "@react-three/drei";
@@ -27,6 +28,7 @@ interface SceneProps {
 }
 
 function BehindNinthDoor(props: any) {
+  const [sphereVisible, setSphereVisible] = useState(true);
   const onLookingAtMetaAngel = useCanvasManager(
     (state) => state.onLookingAtMetaAngel
   );
@@ -40,27 +42,30 @@ function BehindNinthDoor(props: any) {
         </mesh>
       </RigidBody>
       <MetaAngel position={[0, 0, -4]} scale={10} animationSpeed={0.05} />
-      {/* Interactive sphere in the center of the platform */}
-      <group
-        position={[0, 0, 6]}
-        userData={{
-          interactable: true,
-          type: "dancingsphere",
-          getActionPrompt: () => "Press E to enter the dream",
-          onInteract: () => {
-            console.log("🔮 DancingSphere interacted!");
-            onLookingAtMetaAngel();
-          },
-        }}
-      >
-        <DancingSphere
-          color="magenta"
-          distort={0.4}
-          speed={3}
-          scale={0.5}
-          position={[-1, 0, 0]}
-        />
-      </group>
+      {/* Interactive sphere - disappears after interaction */}
+      {sphereVisible && (
+        <group
+          position={[0, 0, 6]}
+          userData={{
+            interactable: true,
+            type: "dancingsphere",
+            getActionPrompt: () => "Press E to enter the dream",
+            onInteract: () => {
+              console.log("🔮 DancingSphere interacted!");
+              setSphereVisible(false);
+              onLookingAtMetaAngel();
+            },
+          }}
+        >
+          <DancingSphere
+            color="magenta"
+            distort={0.4}
+            speed={3}
+            scale={0.5}
+            position={[0, 0, -1]}
+          />
+        </group>
+      )}
     </group>
   );
 }
@@ -69,6 +74,7 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
   const setActionPrompt = useGameUI((state) => state.setActionPrompt);
   const { getCanvas } = useDepthRenderer({ width, height, far: depthFar });
   const ninthDoorOpen = useDoorSequence((state) => state.openedDoors.has(9));
+  const hallwayHidden = useCanvasManager((state) => state.hallwayHidden);
 
   useEffect(() => {
     const canvas = getCanvas();
@@ -121,8 +127,8 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
           onLookingAt={handleLookingAt}
         />
         {/* <OrbitControls zoomToCursor /> */}
-        {/* Hallway con puertas interactivas */}
-        <OniricHallway />
+        {/* Hallway con puertas interactivas - hidden after sphere interaction */}
+        {!hallwayHidden && <OniricHallway />}
         {ninthDoorOpen && <BehindNinthDoor position={[-18, 1.5, -10]} />}
       </Physics>
     </>

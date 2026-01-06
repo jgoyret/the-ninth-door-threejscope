@@ -7,6 +7,7 @@ interface CanvasManagerStore {
   visibleCanvas: VisibleCanvas;
   streamSource: StreamSource;
   isPostNinthDoor: boolean;
+  hallwayHidden: boolean;
 
   setVisibleCanvas: (canvas: VisibleCanvas) => void;
   setStreamSource: (source: StreamSource) => void;
@@ -24,6 +25,7 @@ export const useCanvasManager = create<CanvasManagerStore>((set, get) => ({
   visibleCanvas: "threejs",
   streamSource: "threejs",
   isPostNinthDoor: false,
+  hallwayHidden: false,
 
   setVisibleCanvas: (canvas) => set({ visibleCanvas: canvas }),
 
@@ -45,8 +47,8 @@ export const useCanvasManager = create<CanvasManagerStore>((set, get) => ({
     const { isPostNinthDoor } = get();
     console.log("🎭 onLookingAtMetaAngel called, isPostNinthDoor:", isPostNinthDoor);
     if (isPostNinthDoor) {
-      console.log("🎭 Switching to ai-output canvas");
-      set({ visibleCanvas: "ai-output" });
+      console.log("🎭 Switching to ai-output canvas, hiding hallway");
+      set({ visibleCanvas: "ai-output", hallwayHidden: true });
     }
   },
 
@@ -64,5 +66,6 @@ export const useCanvasManager = create<CanvasManagerStore>((set, get) => ({
       visibleCanvas: "threejs",
       streamSource: "threejs",
       isPostNinthDoor: false,
+      hallwayHidden: false,
     }),
 }));

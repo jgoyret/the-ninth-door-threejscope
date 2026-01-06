@@ -8,6 +8,7 @@ import { useCanvasManager } from "./stores/useCanvasManager";
 import { TitleScreen } from "./components/ui/TitleScreen";
 import { LoadingScreen } from "./components/ui/LoadingScreen";
 import { CanvasGame } from "./components/CanvasGame";
+import { DOOR_PROMPTS } from "./game/doorPrompts";
 
 const GAME_WIDTH = 640;
 const GAME_HEIGHT = 352;
@@ -30,6 +31,7 @@ function App() {
 
   // Canvas manager
   const streamSource = useCanvasManager((state) => state.streamSource);
+  const isPostNinthDoor = useCanvasManager((state) => state.isPostNinthDoor);
 
   // Debug GUI - streamSource is now controlled by canvas manager, not debug
   const handleDebugChange = useCallback((params: DebugParams) => {
@@ -74,6 +76,16 @@ function App() {
       }
     }
   }, [streamSource, isConnected, replaceVideoTrack]);
+
+  // Update VACE settings when entering post-ninth-door state
+  // Send the same prompt as door 9 (index 8) with vaceScale 1
+  useEffect(() => {
+    if (isPostNinthDoor && isConnected) {
+      const door9Prompt = DOOR_PROMPTS[8]; // Door 9 = index 8
+      console.log("🚪 Post 9th door: Sending door 9 prompt with VACE scale 1");
+      updatePrompt(door9Prompt, { vaceScale: 1 });
+    }
+  }, [isPostNinthDoor, isConnected, updatePrompt]);
 
   async function handleStart() {
     // Start loading phase
