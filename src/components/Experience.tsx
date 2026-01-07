@@ -7,9 +7,9 @@ import {
   useState,
 } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Environment } from "@react-three/drei";
-// import { OrbitControls } from "@react-three/drei";
+import { Environment, OrbitControls } from "@react-three/drei";
 import { Physics, RigidBody } from "@react-three/rapier";
+import { useGame } from "../game";
 import OniricHallway from "./3D-models/OniricHallway";
 import Player from "./Player";
 import { useGameUI } from "../stores/useGameUI";
@@ -19,6 +19,7 @@ import type { Object3D } from "three";
 import MetaAngel from "./3D-models/MetaAngel";
 import DancingSphere from "./crazy-primitives/DancingSphere";
 import { useDoorSequence } from "../stores/useDoorSequence";
+import { CollectorOrb, CarriedOrb } from "./game-objects";
 
 interface SceneProps {
   width: number;
@@ -75,6 +76,7 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
   const { getCanvas } = useDepthRenderer({ width, height, far: depthFar });
   const ninthDoorOpen = useDoorSequence((state) => state.openedDoors.has(9));
   const hallwayHidden = useCanvasManager((state) => state.hallwayHidden);
+  const { debugMode } = useGame();
 
   useEffect(() => {
     const canvas = getCanvas();
@@ -106,6 +108,28 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
     [setActionPrompt]
   );
 
+  // Debug mode: OrbitControls sin Player (pero con Physics para los RigidBody)
+  if (debugMode) {
+    return (
+      <>
+        <Environment
+          background={true}
+          preset="night"
+          backgroundBlurriness={0.1}
+        />
+        <ambientLight intensity={0.3} />
+        <directionalLight position={[5, 5, -5]} intensity={1} />
+        <OrbitControls makeDefault target={[-10, 1, 0]} />
+        <Physics gravity={[0, -9.81, 0]}>
+          <CollectorOrb position={[4, 1.2, 0]} scale={0.5} />
+          <OniricHallway />
+          <BehindNinthDoor position={[-18, 1.5, -10]} />
+        </Physics>
+      </>
+    );
+  }
+
+  // Normal game mode
   return (
     <>
       {/* Lighting and environment */}
@@ -117,6 +141,9 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
       <ambientLight intensity={0.3} />
       <directionalLight position={[5, 5, -5]} intensity={1} />
 
+      {/* Orbe que sigue al jugador (fuera de Physics) */}
+      <CarriedOrb />
+
       <Physics gravity={[0, -9.81, 0]}>
         {/* Player */}
         <Player
@@ -126,7 +153,8 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
           onInteract={handleInteract}
           onLookingAt={handleLookingAt}
         />
-        {/* <OrbitControls zoomToCursor /> */}
+        {/* Collector Orb - al inicio del pasillo */}
+        {!hallwayHidden && <CollectorOrb position={[2, 1.2, 0]} scale={0.5} />}
         {/* Hallway con puertas interactivas - hidden after sphere interaction */}
         {!hallwayHidden && <OniricHallway />}
         {ninthDoorOpen && <BehindNinthDoor position={[-18, 1.5, -10]} />}

@@ -4,6 +4,7 @@ import { DOOR_PROMPTS } from "./doorPrompts";
 interface GameContextValue {
   onDoorOpen: (doorIndex: number) => void;
   canInteract: boolean;
+  debugMode: boolean;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -12,11 +13,17 @@ interface GameProviderProps {
   children: ReactNode;
   updatePrompt: (prompt: string, options?: { weight?: number; vaceScale?: number }) => void;
   isConnected: boolean;
+  debugMode?: boolean;
 }
 
-export function GameProvider({ children, updatePrompt, isConnected }: GameProviderProps) {
+export function GameProvider({ children, updatePrompt, isConnected, debugMode = false }: GameProviderProps) {
   const onDoorOpen = useCallback(
     (doorIndex: number) => {
+      if (debugMode) {
+        console.log(`[DEBUG] Door ${doorIndex} would open, but debug mode is active`);
+        return;
+      }
+
       if (!isConnected) {
         console.log("Cannot open door - stream not connected");
         return;
@@ -30,11 +37,11 @@ export function GameProvider({ children, updatePrompt, isConnected }: GameProvid
         console.warn(`No prompt found for door index ${doorIndex}`);
       }
     },
-    [updatePrompt, isConnected]
+    [updatePrompt, isConnected, debugMode]
   );
 
   return (
-    <GameContext.Provider value={{ onDoorOpen, canInteract: isConnected }}>
+    <GameContext.Provider value={{ onDoorOpen, canInteract: isConnected || debugMode, debugMode }}>
       {children}
     </GameContext.Provider>
   );

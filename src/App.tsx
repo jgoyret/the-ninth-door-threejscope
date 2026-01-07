@@ -13,6 +13,9 @@ import { DOOR_PROMPTS } from "./game/doorPrompts";
 const GAME_WIDTH = 640;
 const GAME_HEIGHT = 352;
 
+// Debug mode: true = OrbitControls only, false = normal game
+const DEBUG_MODE = true;
+
 function App() {
   const experienceRef = useRef<ExperienceRef>(null);
   const outputVideoRef = useRef<HTMLVideoElement>(null);
@@ -130,15 +133,21 @@ function App() {
         overflow: "hidden",
       }}
     >
-      {/* Title Screen */}
-      {phase === "title" && <TitleScreen onStart={handleStart} />}
-
-      {/* Loading Screen */}
-      {phase === "loading" && (
-        <LoadingScreen status={status} error={error} onBack={handleBackToTitle} />
+      {/* Title Screen - skip in debug mode */}
+      {!DEBUG_MODE && phase === "title" && (
+        <TitleScreen onStart={handleStart} />
       )}
 
-      {/* Game - always renders but hidden during title/loading */}
+      {/* Loading Screen - skip in debug mode */}
+      {!DEBUG_MODE && phase === "loading" && (
+        <LoadingScreen
+          status={status}
+          error={error}
+          onBack={handleBackToTitle}
+        />
+      )}
+
+      {/* Game - always renders but hidden during title/loading (always visible in debug mode) */}
       <div
         style={{
           width: "100%",
@@ -147,10 +156,14 @@ function App() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          visibility: phase === "playing" ? "visible" : "hidden",
+          visibility: DEBUG_MODE || phase === "playing" ? "visible" : "hidden",
         }}
       >
-        <GameProvider updatePrompt={updatePrompt} isConnected={isConnected}>
+        <GameProvider
+          updatePrompt={updatePrompt}
+          isConnected={isConnected}
+          debugMode={DEBUG_MODE}
+        >
           <CanvasGame
             experienceRef={experienceRef}
             outputVideoRef={outputVideoRef}
@@ -161,110 +174,112 @@ function App() {
           />
         </GameProvider>
 
-        {/* Control bar - only visible when playing */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: "rgba(20, 20, 20, 0.95)",
-            borderTop: "2px solid rgba(255, 255, 255, 0.1)",
-            padding: "16px 24px",
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-            backdropFilter: "blur(10px)",
-          }}
-        >
-          {/* Status indicator */}
+        {/* Control bar - only visible when playing, hidden in debug mode */}
+        {!DEBUG_MODE && (
           <div
             style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              backgroundColor: "rgba(20, 20, 20, 0.95)",
+              borderTop: "2px solid rgba(255, 255, 255, 0.1)",
+              padding: "16px 24px",
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              minWidth: 140,
+              gap: 16,
+              backdropFilter: "blur(10px)",
             }}
           >
+            {/* Status indicator */}
             <div
               style={{
-                width: 12,
-                height: 12,
-                borderRadius: "50%",
-                backgroundColor: isConnected ? "#4CAF50" : "#666",
-                boxShadow: isConnected
-                  ? "0 0 10px rgba(76, 175, 80, 0.8)"
-                  : "none",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                minWidth: 140,
+              }}
+            >
+              <div
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  backgroundColor: isConnected ? "#4CAF50" : "#666",
+                  boxShadow: isConnected
+                    ? "0 0 10px rgba(76, 175, 80, 0.8)"
+                    : "none",
+                }}
+              />
+              <span style={{ fontSize: 14, fontWeight: 500, color: "white" }}>
+                {isConnected ? "Streaming" : "Not streaming"}
+              </span>
+            </div>
+
+            {/* Prompt input */}
+            <input
+              type="text"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Enter your prompt..."
+              data-daydream-ui
+              style={{
+                flex: 1,
+                padding: "10px 16px",
+                fontSize: 14,
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                borderRadius: 6,
+                color: "white",
+                outline: "none",
               }}
             />
-            <span style={{ fontSize: 14, fontWeight: 500, color: "white" }}>
-              {isConnected ? "Streaming" : "Not streaming"}
-            </span>
+
+            {/* Action buttons */}
+            {isConnected && (
+              <>
+                <button
+                  onClick={handleUpdatePrompt}
+                  data-daydream-ui
+                  style={{
+                    padding: "10px 24px",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    backgroundColor: "#2196F3",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    minWidth: 100,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Update
+                </button>
+                <button
+                  onClick={handleStop}
+                  data-daydream-ui
+                  style={{
+                    padding: "10px 24px",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    backgroundColor: "#f44336",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    minWidth: 100,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Stop
+                </button>
+              </>
+            )}
           </div>
-
-          {/* Prompt input */}
-          <input
-            type="text"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Enter your prompt..."
-            data-daydream-ui
-            style={{
-              flex: 1,
-              padding: "10px 16px",
-              fontSize: 14,
-              backgroundColor: "rgba(255, 255, 255, 0.1)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              borderRadius: 6,
-              color: "white",
-              outline: "none",
-            }}
-          />
-
-          {/* Action buttons */}
-          {isConnected && (
-            <>
-              <button
-                onClick={handleUpdatePrompt}
-                data-daydream-ui
-                style={{
-                  padding: "10px 24px",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  backgroundColor: "#2196F3",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  minWidth: 100,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                }}
-              >
-                Update
-              </button>
-              <button
-                onClick={handleStop}
-                data-daydream-ui
-                style={{
-                  padding: "10px 24px",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  backgroundColor: "#f44336",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  minWidth: 100,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                }}
-              >
-                Stop
-              </button>
-            </>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

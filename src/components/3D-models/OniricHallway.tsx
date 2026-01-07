@@ -9,7 +9,12 @@ import React, {
   useState,
   useRef,
 } from "react";
-import { useGLTF, Text } from "@react-three/drei";
+import {
+  useGLTF,
+  Text,
+  useTexture,
+  MeshDistortMaterial,
+} from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import type { GLTF } from "three-stdlib";
 import { RigidBody, type RapierRigidBody } from "@react-three/rapier";
@@ -17,6 +22,8 @@ import { useGame } from "../../game";
 import { useGameUI } from "../../stores/useGameUI";
 import { useDoorSequence } from "../../stores/useDoorSequence";
 import { useCanvasManager } from "../../stores/useCanvasManager";
+import { getDoorByNumber } from "../../game/doorPrompts";
+import { useOrbStore } from "../../stores/useOrbStore";
 
 export interface OniricHallwayRef {
   openDoor: () => void;
@@ -73,8 +80,12 @@ function Door({
   const getNextDoor = useDoorSequence((state) => state.getNextDoor);
 
   // Canvas manager para eventos de cambio de canvas
-  const onFirstDoorOpened = useCanvasManager((state) => state.onFirstDoorOpened);
-  const onNinthDoorOpened = useCanvasManager((state) => state.onNinthDoorOpened);
+  const onFirstDoorOpened = useCanvasManager(
+    (state) => state.onFirstDoorOpened
+  );
+  const onNinthDoorOpened = useCanvasManager(
+    (state) => state.onNinthDoorOpened
+  );
 
   // Refs para acceso estable en callbacks
   const isOpenRef = useRef(isOpen);
@@ -243,6 +254,134 @@ const DOOR_POSITIONS: {
   { position: [-17.985, 0, -0.998], rotation: [Math.PI, 0, Math.PI] },
 ];
 
+// Posiciones de los planos con imágenes detrás de cada puerta
+// Ratio 2:3 (ancho:alto), tamaño aproximado de puerta
+const PLANE_WIDTH = 0.8 * 2;
+const PLANE_HEIGHT = 1.2 * 2;
+const PLANE_OFFSET_Z = 0.1; // Distancia detrás de la puerta
+
+const DOOR_IMAGE_PLANES: {
+  doorNumber: number;
+  position: [number, number, number];
+  rotation: [number, number, number];
+}[] = [
+  // Puertas lado frontal (1-4) - miran hacia z negativo
+  {
+    doorNumber: 1,
+    position: [0, 1.1, 1.026 + PLANE_OFFSET_Z],
+    rotation: [0, Math.PI, 0],
+  },
+  {
+    doorNumber: 2,
+    position: [-5.969, 1.1, 1.026 + PLANE_OFFSET_Z],
+    rotation: [0, Math.PI, 0],
+  },
+  {
+    doorNumber: 3,
+    position: [-12.054, 1.1, 1.026 + PLANE_OFFSET_Z],
+    rotation: [0, Math.PI, 0],
+  },
+  {
+    doorNumber: 4,
+    position: [-17.946, 1.1, 1.026 + PLANE_OFFSET_Z],
+    rotation: [0, Math.PI, 0],
+  },
+  // Puerta 5 - extremo del pasillo
+  {
+    doorNumber: 5,
+    position: [-20.017 - PLANE_OFFSET_Z, 1.1, -0.008],
+    rotation: [0, -Math.PI / 2, 0],
+  },
+  // Puertas lado trasero (6-9) - miran hacia z positivo
+  {
+    doorNumber: 6,
+    position: [-0.019, 1.1, -0.999 - PLANE_OFFSET_Z],
+    rotation: [0, 0, 0],
+  },
+  {
+    doorNumber: 7,
+    position: [-5.969, 1.1, -0.998 - PLANE_OFFSET_Z],
+    rotation: [0, 0, 0],
+  },
+  {
+    doorNumber: 8,
+    position: [-12.08, 1.1, -0.998 - PLANE_OFFSET_Z],
+    rotation: [0, 0, 0],
+  },
+  {
+    doorNumber: 9,
+    position: [-17.985, 1.1, -0.998 - PLANE_OFFSET_Z],
+    rotation: [0, 0, 0],
+  },
+];
+
+// Componente para el plano con imagen detrás de cada puerta
+interface DoorImagePlaneProps {
+  doorNumber: number;
+  position: [number, number, number];
+  rotation: [number, number, number];
+}
+
+function DoorImagePlane({
+  doorNumber,
+  position,
+  rotation,
+}: DoorImagePlaneProps) {
+  const doorConfig = getDoorByNumber(doorNumber);
+  const isDoorOpen = useDoorSequence((state) => state.openedDoors.has(doorNumber));
+  const collectOrb = useOrbStore((state) => state.collectOrb);
+  const carriedOrb = useOrbStore((state) => state.carriedOrb);
+  const isOrbDelivered = useOrbStore((state) => state.isOrbDelivered);
+
+  // No renderizar si no hay imagen (ej: puerta 9)
+  if (!doorConfig?.image_url) return null;
+
+  const texture = useTexture(doorConfig.image_url);
+
+  // El orbe ya fue recolectado de esta puerta o ya fue entregado?
+  const alreadyCollected = carriedOrb?.doorNumber === doorNumber || isOrbDelivered(doorNumber);
+
+  const handleCollect = () => {
+    if (!isDoorOpen) return;
+    if (alreadyCollected) return;
+    if (carriedOrb !== null) {
+      // Ya tiene un orbe, no puede recoger otro
+      console.log("🔮 Already carrying an orb!");
+      return;
+    }
+    collectOrb(doorNumber);
+  };
+
+  return (
+    <group
+      position={position}
+      rotation={rotation}
+      userData={{
+        interactable: true,
+        type: "door-image",
+        doorNumber,
+        getActionPrompt: () => {
+          if (!isDoorOpen) return null;
+          if (alreadyCollected) return null;
+          if (carriedOrb !== null) return "Deliver current orb first";
+          return `Press E to collect orb (Door ${doorNumber})`;
+        },
+        onInteract: handleCollect,
+      }}
+    >
+      <mesh>
+        <planeGeometry args={[PLANE_WIDTH, PLANE_HEIGHT]} />
+        <MeshDistortMaterial
+          distort={0.2}
+          speed={1}
+          map={texture}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
+  );
+}
+
 const OniricHallway = forwardRef<
   OniricHallwayRef,
   React.JSX.IntrinsicElements["group"]
@@ -271,6 +410,16 @@ const OniricHallway = forwardRef<
             rotation={door.rotation}
             nodes={nodes}
             materials={materials}
+          />
+        ))}
+
+        {/* Planos con imágenes detrás de cada puerta */}
+        {DOOR_IMAGE_PLANES.map((plane) => (
+          <DoorImagePlane
+            key={plane.doorNumber}
+            doorNumber={plane.doorNumber}
+            position={plane.position}
+            rotation={plane.rotation}
           />
         ))}
 
