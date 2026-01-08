@@ -7,7 +7,13 @@ import {
   useState,
 } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Environment, OrbitControls } from "@react-three/drei";
+import {
+  Environment,
+  OrbitControls,
+  Sky,
+  Clouds,
+  Cloud,
+} from "@react-three/drei";
 import { Physics, RigidBody } from "@react-three/rapier";
 import { useGame } from "../game";
 import OniricHallway from "./3D-models/OniricHallway";
@@ -19,7 +25,7 @@ import type { Object3D } from "three";
 import MetaAngel from "./3D-models/MetaAngel";
 import DancingSphere from "./crazy-primitives/DancingSphere";
 import { useDoorSequence } from "../stores/useDoorSequence";
-import { CollectorOrb, CarriedOrb } from "./game-objects";
+import { CollectorOrb, CarriedOrb, DreamSphereField } from "./game-objects";
 
 interface SceneProps {
   width: number;
@@ -30,6 +36,7 @@ interface SceneProps {
 
 function BehindNinthDoor(props: any) {
   const [sphereVisible, setSphereVisible] = useState(true);
+  const [dreamFieldActive, setDreamFieldActive] = useState(false);
   const onLookingAtMetaAngel = useCanvasManager(
     (state) => state.onLookingAtMetaAngel
   );
@@ -54,6 +61,7 @@ function BehindNinthDoor(props: any) {
             onInteract: () => {
               console.log("🔮 DancingSphere interacted!");
               setSphereVisible(false);
+              setDreamFieldActive(true);
               onLookingAtMetaAngel();
             },
           }}
@@ -66,6 +74,15 @@ function BehindNinthDoor(props: any) {
             position={[0, 0, -1]}
           />
         </group>
+      )}
+      {/* Dream sphere field - appears after interaction */}
+      {dreamFieldActive && (
+        <DreamSphereField
+          position={[0, 0, 6]}
+          radius={4}
+          maxSpheres={20}
+          riseSpeed={0.3}
+        />
       )}
     </group>
   );
@@ -136,6 +153,25 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
   return (
     <>
       {/* Lighting and environment */}
+      <Sky
+        azimuth={0.1}
+        distance={100}
+        inclination={0.6}
+        rayleigh={2.5}
+        sunPosition={[1, 100, -100]}
+        turbidity={0.1}
+      />
+      <Clouds position={[0, 15, 0]}>
+        <Cloud
+          segments={40}
+          bounds={[100, 2, 100]}
+          volume={100}
+          color="orange"
+          speed={0.5}
+          opacity={0.1}
+        />
+        {/* <Cloud seed={1} scale={2} volume={5} color="hotpink" fade={100} /> */}
+      </Clouds>
       <Environment
         background={false}
         preset="night"
@@ -152,7 +188,7 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
         <Player
           speed={1}
           spawn={[2.5, 5, 0]}
-          interactionDistance={5}
+          interactionDistance={2}
           onInteract={handleInteract}
           onLookingAt={handleLookingAt}
         />

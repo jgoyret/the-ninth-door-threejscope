@@ -89,8 +89,10 @@ function App() {
     if (isPostNinthDoor && isConnected) {
       const door9Config = getDoorByNumber(9);
       if (door9Config?.prompt) {
-        console.log("🚪 Post 9th door: Sending door 9 prompt with VACE scale 1");
-        updatePrompt(door9Config.prompt, { vaceScale: 1 });
+        console.log(
+          "🚪 Post 9th door: Sending door 9 prompt with VACE scale 1"
+        );
+        updatePrompt(door9Config.prompt, { vaceScale: 0.7 });
       }
     }
   }, [isPostNinthDoor, isConnected, updatePrompt]);
@@ -141,13 +143,13 @@ function App() {
         />
       )}
 
+
       {/* Game - always renders but hidden during title/loading (always visible in debug mode) */}
       <div
         style={{
-          width: "100%",
-          height: "100%",
+          position: "absolute",
+          inset: 0,
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           visibility: DEBUG_MODE || phase === "playing" ? "visible" : "hidden",
@@ -171,6 +173,28 @@ function App() {
           />
         </GameProvider>
       </div>
+
+      {/* Controls hint - fixed to bottom of screen */}
+      {(DEBUG_MODE || phase === "playing") && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 12,
+            left: "50%",
+            transform: "translateX(-50%)",
+            pointerEvents: "none",
+            zIndex: 200,
+            fontSize: 11,
+            letterSpacing: 1,
+            color: "rgba(255, 255, 255, 0.35)",
+            textTransform: "uppercase",
+            fontFamily: "system-ui, sans-serif",
+            whiteSpace: "nowrap",
+          }}
+        >
+          WASD to move • Mouse to look • E to interact
+        </div>
+      )}
     </div>
   );
 }

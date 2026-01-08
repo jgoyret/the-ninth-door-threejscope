@@ -6,7 +6,7 @@ import { useGameUI } from "../../stores/useGameUI";
 import { useGame } from "../../game";
 
 const PROMPT_DELAY = 20000; // 20 segundos después de iniciar absorción
-const BLEND_START_DELAY = 10000; // 10 seg después de presionar E para iniciar el blend
+const BLEND_START_DELAY = 5000; // 10 seg después de presionar E para iniciar el blend
 const BLEND_DURATION = 5000; // 5 seg de blend suave entre canvas IA y threejs
 const MESSAGE_DELAY = 2000; // 2 seg antes de mostrar "Door X is calling"
 
@@ -16,10 +16,14 @@ const MESSAGE_DELAY = 2000; // 2 seg antes de mostrar "Door X is calling"
  */
 export function AbsorptionUI() {
   const absorptionState = useOrbStore((state) => state.absorptionState);
-  const startCompletingAbsorption = useOrbStore((state) => state.startCompletingAbsorption);
+  const startCompletingAbsorption = useOrbStore(
+    (state) => state.startCompletingAbsorption
+  );
   const completeAbsorption = useOrbStore((state) => state.completeAbsorption);
   const startExitBlend = useCanvasManager((state) => state.startExitBlend);
-  const completeExitBlend = useCanvasManager((state) => state.completeExitBlend);
+  const completeExitBlend = useCanvasManager(
+    (state) => state.completeExitBlend
+  );
   const getNextDoor = useDoorSequence((state) => state.getNextDoor);
   const showMessage = useGameUI((state) => state.showMessage);
   const clearMessage = useGameUI((state) => state.clearMessage);
@@ -42,7 +46,11 @@ export function AbsorptionUI() {
     }
 
     // Cuando empieza absorbing, programar el prompt para 20 seg después
-    if (absorptionState === "absorbing" && !promptShown.current && !timeoutRef.current) {
+    if (
+      absorptionState === "absorbing" &&
+      !promptShown.current &&
+      !timeoutRef.current
+    ) {
       console.log("🌀 Absorption started - prompt will show in 20 seconds");
 
       timeoutRef.current = window.setTimeout(() => {
@@ -56,7 +64,11 @@ export function AbsorptionUI() {
 
     // Handler para tecla E (solo si el prompt ya se mostró y no estamos completando)
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === "e" && promptShown.current && !isCompleting.current) {
+      if (
+        e.key.toLowerCase() === "e" &&
+        promptShown.current &&
+        !isCompleting.current
+      ) {
         e.preventDefault();
         console.log("✅ Starting smooth absorption completion...");
         isCompleting.current = true;

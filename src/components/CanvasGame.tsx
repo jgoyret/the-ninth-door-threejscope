@@ -1,8 +1,10 @@
-import { type RefObject, useEffect } from "react";
+import { type RefObject, useEffect, useState } from "react";
 import { Experience, type ExperienceRef } from "./Experience";
 import { GameOverlay } from "./ui/GameOverlay";
 import { AbsorptionUI } from "./ui/AbsorptionUI";
+import { DreamPromptUI } from "./ui/DreamPromptUI";
 import { useCanvasManager } from "../stores/useCanvasManager";
+import { useGame } from "../game";
 
 interface CanvasGameProps {
   experienceRef: RefObject<ExperienceRef | null>;
@@ -12,6 +14,8 @@ interface CanvasGameProps {
   height: number;
   depthFar: number;
 }
+
+const DREAM_PROMPT_DELAY = 10000; // 10 segundos después de "Enter the dream"
 
 export function CanvasGame({
   experienceRef,
@@ -23,6 +27,19 @@ export function CanvasGame({
 }: CanvasGameProps) {
   const visibleCanvas = useCanvasManager((state) => state.visibleCanvas);
   const isExitBlending = useCanvasManager((state) => state.isExitBlending);
+  const hallwayHidden = useCanvasManager((state) => state.hallwayHidden);
+  const { sendDreamPrompt } = useGame();
+  const [showDreamPrompt, setShowDreamPrompt] = useState(false);
+
+  // Show dream prompt UI 10 seconds after entering the dream
+  useEffect(() => {
+    if (hallwayHidden && !showDreamPrompt) {
+      const timer = setTimeout(() => {
+        setShowDreamPrompt(true);
+      }, DREAM_PROMPT_DELAY);
+      return () => clearTimeout(timer);
+    }
+  }, [hallwayHidden, showDreamPrompt]);
 
   // Mount depth canvas when ready
   useEffect(() => {
@@ -49,6 +66,11 @@ export function CanvasGame({
         width,
         height,
         backgroundColor: "#000",
+        boxShadow: `
+          0 0 60px 20px rgba(180, 180, 190, 0.15),
+          0 0 120px 60px rgba(140, 140, 150, 0.1),
+          0 0 200px 100px rgba(100, 100, 110, 0.08)
+        `,
       }}
     >
       {/* Layer 1: Three.js - always renders, receives interaction */}
@@ -76,7 +98,7 @@ export function CanvasGame({
           zIndex: visibleCanvas === "depth" ? 2 : 0,
           opacity: visibleCanvas === "depth" ? 1 : 0,
           pointerEvents: "none",
-          transition: "opacity 2s ease-in-out",
+          transition: "opacity 4s ease-in-out",
         }}
       />
 
@@ -95,10 +117,10 @@ export function CanvasGame({
           zIndex: visibleCanvas === "ai-output" || isExitBlending ? 3 : 0,
           opacity: isExitBlending ? 0 : visibleCanvas === "ai-output" ? 1 : 0,
           pointerEvents: "none",
-          // 5s transition during exit blend, 2s for normal transitions
+          // 5s transition during exit blend, 4s for normal transitions
           transition: isExitBlending
             ? "opacity 5s ease-in-out"
-            : "opacity 2s ease-in-out",
+            : "opacity 4s ease-in-out",
         }}
       />
 
@@ -116,6 +138,12 @@ export function CanvasGame({
 
       {/* AbsorptionUI - maneja lógica global de absorción */}
       <AbsorptionUI />
+
+      {/* Dream Prompt UI - aparece 10s después de "Enter the dream" */}
+      <DreamPromptUI
+        visible={showDreamPrompt}
+        onSubmit={sendDreamPrompt}
+      />
     </div>
   );
 }

@@ -29,27 +29,6 @@ export function GameOverlay() {
 
   return (
     <>
-      {/* Controls hint at bottom */}
-      <div
-        data-daydream-ui
-        style={{
-          position: "absolute",
-          bottom: 16,
-          left: "50%",
-          transform: "translateX(-50%)",
-          pointerEvents: "none",
-          zIndex: 100,
-          fontSize: 11,
-          letterSpacing: 1,
-          color: "rgba(255, 255, 255, 0.35)",
-          textTransform: "uppercase",
-          fontFamily: "system-ui, sans-serif",
-          whiteSpace: "nowrap",
-        }}
-      >
-        WASD to move • Mouse to look • E to interact
-      </div>
-
       {/* Action prompt - Tipo 1: raycast (abajo, cerca del crosshair) */}
       {actionPrompt && (
         <div

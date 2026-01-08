@@ -6,6 +6,7 @@ interface GameContextValue {
   onDoorOpen: (doorNumber: number) => void;
   onOrbDeliver: () => void;
   onExitAbsorption: () => void;
+  sendDreamPrompt: (prompt: string) => void;
   canInteract: boolean;
   debugMode: boolean;
 }
@@ -14,7 +15,10 @@ const GameContext = createContext<GameContextValue | null>(null);
 
 interface GameProviderProps {
   children: ReactNode;
-  updatePrompt: (prompt: string, options?: { weight?: number; vaceScale?: number }) => void;
+  updatePrompt: (
+    prompt: string,
+    options?: { weight?: number; vaceScale?: number }
+  ) => void;
   updateVaceRefImages: (images: string[]) => void;
   updateVaceScale: (vaceScale: number) => void;
   isConnected: boolean;
@@ -22,11 +26,21 @@ interface GameProviderProps {
   vaceScale?: number;
 }
 
-export function GameProvider({ children, updatePrompt, updateVaceRefImages, updateVaceScale, isConnected, debugMode = false, vaceScale = 0.45 }: GameProviderProps) {
+export function GameProvider({
+  children,
+  updatePrompt,
+  updateVaceRefImages,
+  updateVaceScale,
+  isConnected,
+  debugMode = false,
+  vaceScale = 0.45,
+}: GameProviderProps) {
   const onDoorOpen = useCallback(
     (doorNumber: number) => {
       if (debugMode) {
-        console.log(`[DEBUG] Door ${doorNumber} would open, but debug mode is active`);
+        console.log(
+          `[DEBUG] Door ${doorNumber} would open, but debug mode is active`
+        );
         return;
       }
 
@@ -37,7 +51,10 @@ export function GameProvider({ children, updatePrompt, updateVaceRefImages, upda
 
       const doorConfig = getDoorByNumber(doorNumber);
       if (doorConfig?.prompt) {
-        console.log(`Door ${doorNumber} opened, sending prompt with vace_context_scale=${vaceScale}:`, doorConfig.prompt);
+        console.log(
+          `Door ${doorNumber} opened, sending prompt with vace_context_scale=${vaceScale}:`,
+          doorConfig.prompt
+        );
         updatePrompt(doorConfig.prompt, { vaceScale });
       } else {
         console.warn(`No prompt found for door ${doorNumber}`);
@@ -81,8 +98,37 @@ export function GameProvider({ children, updatePrompt, updateVaceRefImages, upda
     updateVaceScale(0.8);
   }, [updateVaceScale, isConnected, debugMode]);
 
+  const sendDreamPrompt = useCallback(
+    (prompt: string) => {
+      if (debugMode) {
+        console.log("[DEBUG] Dream prompt, but debug mode is active:", prompt);
+        return;
+      }
+
+      if (!isConnected) {
+        console.log("Cannot send dream prompt - stream not connected");
+        return;
+      }
+
+      // Random vaceScale between 0.4 and 0.7
+      const randomVaceScale = 0.4 + Math.random() * 0.3;
+      console.log(`💭 Sending dream prompt (vace_scale=${randomVaceScale.toFixed(2)}):`, prompt);
+      updatePrompt(prompt, { vaceScale: randomVaceScale });
+    },
+    [updatePrompt, isConnected, debugMode]
+  );
+
   return (
-    <GameContext.Provider value={{ onDoorOpen, onOrbDeliver, onExitAbsorption, canInteract: isConnected || debugMode, debugMode }}>
+    <GameContext.Provider
+      value={{
+        onDoorOpen,
+        onOrbDeliver,
+        onExitAbsorption,
+        sendDreamPrompt,
+        canInteract: isConnected || debugMode,
+        debugMode,
+      }}
+    >
       {children}
     </GameContext.Provider>
   );
