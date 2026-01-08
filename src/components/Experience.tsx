@@ -4,19 +4,22 @@ import {
   useRef,
   useCallback,
   useEffect,
+  useState,
 } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Environment } from "@react-three/drei";
-// import { OrbitControls } from "@react-three/drei";
+import { Environment, OrbitControls } from "@react-three/drei";
 import { Physics, RigidBody } from "@react-three/rapier";
+import { useGame } from "../game";
 import OniricHallway from "./3D-models/OniricHallway";
 import Player from "./Player";
-import { GameOverlay } from "./ui/GameOverlay";
 import { useGameUI } from "../stores/useGameUI";
 import { useDepthRenderer } from "../hooks/useDepthRenderer";
+import { useCanvasManager } from "../stores/useCanvasManager";
 import type { Object3D } from "three";
 import MetaAngel from "./3D-models/MetaAngel";
+import DancingSphere from "./crazy-primitives/DancingSphere";
 import { useDoorSequence } from "../stores/useDoorSequence";
+import { CollectorOrb, CarriedOrb } from "./game-objects";
 
 interface SceneProps {
   width: number;
@@ -26,6 +29,11 @@ interface SceneProps {
 }
 
 function BehindNinthDoor(props: any) {
+  const [sphereVisible, setSphereVisible] = useState(true);
+  const onLookingAtMetaAngel = useCanvasManager(
+    (state) => state.onLookingAtMetaAngel
+  );
+
   return (
     <group {...props}>
       <RigidBody type="fixed" colliders="trimesh">
@@ -35,6 +43,30 @@ function BehindNinthDoor(props: any) {
         </mesh>
       </RigidBody>
       <MetaAngel position={[0, 0, -4]} scale={10} animationSpeed={0.05} />
+      {/* Interactive sphere - disappears after interaction */}
+      {sphereVisible && (
+        <group
+          position={[0, 0, 6]}
+          userData={{
+            interactable: true,
+            type: "dancingsphere",
+            getActionPrompt: () => "Press E to enter the dream",
+            onInteract: () => {
+              console.log("🔮 DancingSphere interacted!");
+              setSphereVisible(false);
+              onLookingAtMetaAngel();
+            },
+          }}
+        >
+          <DancingSphere
+            color="magenta"
+            distort={0.4}
+            speed={3}
+            scale={0.5}
+            position={[0, 0, -1]}
+          />
+        </group>
+      )}
     </group>
   );
 }
@@ -43,6 +75,8 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
   const setActionPrompt = useGameUI((state) => state.setActionPrompt);
   const { getCanvas } = useDepthRenderer({ width, height, far: depthFar });
   const ninthDoorOpen = useDoorSequence((state) => state.openedDoors.has(9));
+  const hallwayHidden = useCanvasManager((state) => state.hallwayHidden);
+  const { debugMode } = useGame();
 
   useEffect(() => {
     const canvas = getCanvas();
@@ -74,6 +108,31 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
     [setActionPrompt]
   );
 
+  // Debug mode: OrbitControls sin Player (pero con Physics para los RigidBody)
+  if (debugMode) {
+    return (
+      <>
+        <Environment
+          background={true}
+          preset="night"
+          backgroundBlurriness={0.1}
+        />
+        <ambientLight intensity={0.3} />
+        <directionalLight position={[5, 5, -5]} intensity={1} />
+        <OrbitControls makeDefault target={[-10, 1, 0]} />
+        <Physics gravity={[0, -9.81, 0]}>
+          <CollectorOrb position={[5, 1.2, 0]} scale={0.5} />
+          <OniricHallway />
+          <BehindNinthDoor
+            position={[-20, 1.5, 0]}
+            rotation={[0, Math.PI / 2, 0]}
+          />
+        </Physics>
+      </>
+    );
+  }
+
+  // Normal game mode
   return (
     <>
       {/* Lighting and environment */}
@@ -85,19 +144,28 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
       <ambientLight intensity={0.3} />
       <directionalLight position={[5, 5, -5]} intensity={1} />
 
+      {/* Orbe que sigue al jugador (fuera de Physics) */}
+      <CarriedOrb />
+
       <Physics gravity={[0, -9.81, 0]}>
         {/* Player */}
         <Player
           speed={1}
           spawn={[2.5, 5, 0]}
-          interactionDistance={1}
+          interactionDistance={5}
           onInteract={handleInteract}
           onLookingAt={handleLookingAt}
         />
-        {/* <OrbitControls zoomToCursor /> */}
-        {/* Hallway con puertas interactivas */}
-        <OniricHallway />
-        {ninthDoorOpen && <BehindNinthDoor position={[-18, 1.5, -10]} />}
+        {/* Collector Orb - al inicio del pasillo */}
+        {!hallwayHidden && <CollectorOrb position={[5, 1.2, 0]} scale={0.5} />}
+        {/* Hallway con puertas interactivas - hidden after sphere interaction */}
+        {!hallwayHidden && <OniricHallway />}
+        {ninthDoorOpen && (
+          <BehindNinthDoor
+            position={[-20, 1.5, 0]}
+            rotation={[0, Math.PI / 2, 0]}
+          />
+        )}
       </Physics>
     </>
   );
@@ -162,7 +230,6 @@ export const Experience = forwardRef<ExperienceRef, ExperienceProps>(
             onDepthCanvasReady={handleDepthCanvasReady}
           />
         </Canvas>
-        <GameOverlay />
       </div>
     );
   }

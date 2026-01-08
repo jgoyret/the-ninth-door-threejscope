@@ -6,6 +6,9 @@ import {
   type RapierRigidBody,
 } from "@react-three/rapier";
 import * as THREE from "three";
+import { usePlayerPosition } from "../stores/usePlayerPosition";
+import { usePlayerCommands } from "../stores/usePlayerCommands";
+import { useRaycastDebug } from "../stores/useRaycastDebug";
 
 interface PlayerProps {
   speed?: number;
@@ -42,6 +45,7 @@ const Player = forwardRef<PlayerRef, PlayerProps>(function Player(
   const raycaster = useRef(new THREE.Raycaster());
   const currentLookingAt = useRef<THREE.Object3D | null>(null);
   const canInteract = useRef(true);
+  const lastTeleportTimestamp = useRef(0);
 
   useImperativeHandle(
     ref,
@@ -129,6 +133,17 @@ const Player = forwardRef<PlayerRef, PlayerProps>(function Player(
   useFrame(() => {
     if (!rbRef.current) return;
 
+    // Check for teleport commands
+    const { teleportCommand, clearTeleport } = usePlayerCommands.getState();
+    if (teleportCommand && teleportCommand.timestamp > lastTeleportTimestamp.current) {
+      lastTeleportTimestamp.current = teleportCommand.timestamp;
+      const [x, y, z] = teleportCommand.position;
+      rbRef.current.setTranslation({ x, y, z }, true);
+      rbRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      console.log("🚀 Teleported to:", x, y, z);
+      clearTeleport();
+    }
+
     const isControlActive = !!document.pointerLockElement;
 
     // Raycast para detectar objetos interactables
@@ -149,6 +164,19 @@ const Player = forwardRef<PlayerRef, PlayerProps>(function Player(
         obj = obj.parent;
       }
       if (foundInteractable) break;
+    }
+
+    // Update raycast debug store
+    const raycastDebug = useRaycastDebug.getState();
+    if (intersects.length > 0) {
+      const firstHit = intersects[0];
+      raycastDebug.setHit(
+        firstHit.object.name || "unnamed",
+        firstHit.distance,
+        foundInteractable?.userData?.type || "-"
+      );
+    } else {
+      raycastDebug.clearHit();
     }
 
     // Notificar cambio de objeto mirando
@@ -194,6 +222,9 @@ const Player = forwardRef<PlayerRef, PlayerProps>(function Player(
     const pos = rbRef.current.translation();
     camera.position.set(pos.x, pos.y + 0.6, pos.z);
     camera.rotation.set(pitch.current, yaw.current, 0);
+
+    // Update position store for debug
+    usePlayerPosition.getState().setPosition(pos.x, pos.y, pos.z);
   });
 
   const sx = initialSpawn.current?.[0] ?? 0;

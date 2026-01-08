@@ -9,6 +9,12 @@ import type {
 } from "../types/scope";
 
 const SCOPE_URL = import.meta.env.VITE_SCOPE_URL;
+const IS_RUNPOD = SCOPE_URL?.includes("runpod");
+
+// LoRA path based on environment
+const LORA_PATH = IS_RUNPOD
+  ? "/workspace/models/lora/kxsr_WAN1-3B_cinematic_chase.safetensors"
+  : "C:\\Users\\PC\\.daydream-scope\\models\\lora\\kxsr_WAN1-3B_cinematic_chase.safetensors";
 
 export const scopeApi = {
   async getModelStatus(pipelineId: string): Promise<ModelStatus> {
@@ -64,6 +70,7 @@ export const scopeApi = {
   },
 };
 
+// Base params without LoRA
 export const DEFAULT_PIPELINE_PARAMS: PipelineLoadParams = {
   width: 640,
   height: 352,
@@ -71,10 +78,16 @@ export const DEFAULT_PIPELINE_PARAMS: PipelineLoadParams = {
   quantization: null,
   vace_enabled: true,
   vace_context_scale: 0.4,
+  lora_merge_mode: "none",
+};
+
+// Params with LoRA (optional)
+export const PIPELINE_PARAMS_WITH_LORA: PipelineLoadParams = {
+  ...DEFAULT_PIPELINE_PARAMS,
   lora_merge_mode: "permanent_merge",
   loras: [
     {
-      path: "/workspace/models/lora/kxsr_WAN1-3B_cinematic_chase.safetensors",
+      path: LORA_PATH,
       scale: 1,
       merge_mode: "permanent_merge",
     },

@@ -1,5 +1,9 @@
 import { useRef, useState, useCallback } from "react";
-import { scopeApi, DEFAULT_PIPELINE_PARAMS } from "../services/scopeApi";
+import {
+  scopeApi,
+  DEFAULT_PIPELINE_PARAMS,
+  PIPELINE_PARAMS_WITH_LORA,
+} from "../services/scopeApi";
 import type {
   ConnectionStatus,
   IceCandidate,
@@ -37,28 +41,54 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
           throw new Error("Model not downloaded");
         }
 
-        // 2. Load pipeline
+        // 2. Load pipeline (try with LoRA first, fallback to without)
         setStatus("loading-pipeline");
-        const loadData = await scopeApi.loadPipeline(
-          pipelineId,
-          DEFAULT_PIPELINE_PARAMS
-        );
-        console.log("🚀 Pipeline load:", loadData);
+        let usedLora = false;
+
+        try {
+          // Try with LoRA first
+          console.log("🎨 Trying to load pipeline with LoRA...");
+          await scopeApi.loadPipeline(pipelineId, PIPELINE_PARAMS_WITH_LORA);
+          usedLora = true;
+          console.log("✅ Pipeline loaded with LoRA");
+        } catch (loraError) {
+          // LoRA failed, try without it
+          console.log("⚠️ LoRA not available, loading without it...", loraError);
+          await scopeApi.loadPipeline(pipelineId, DEFAULT_PIPELINE_PARAMS);
+          console.log("✅ Pipeline loaded without LoRA");
+        }
 
         // 3. Wait for pipeline to be ready
         setStatus("waiting-pipeline");
         let pipelineReady = false;
-        while (!pipelineReady) {
+        let retryCount = 0;
+        const maxRetries = 60; // 60 seconds max wait
+
+        while (!pipelineReady && retryCount < maxRetries) {
           const statusData = await scopeApi.getPipelineStatus();
           console.log("📊 Pipeline status:", statusData.status);
 
           if (statusData.status === "loaded") {
             pipelineReady = true;
+            console.log(usedLora ? "🎨 Running with LoRA" : "🎬 Running without LoRA");
           } else if (statusData.status === "error") {
-            throw new Error(statusData.error || "Pipeline error");
+            // If error with LoRA, retry without it
+            if (usedLora) {
+              console.log("⚠️ Pipeline error with LoRA, retrying without...");
+              await scopeApi.loadPipeline(pipelineId, DEFAULT_PIPELINE_PARAMS);
+              usedLora = false;
+              retryCount = 0; // Reset retry count for new attempt
+            } else {
+              throw new Error(statusData.error || "Pipeline error");
+            }
           } else {
             await new Promise((r) => setTimeout(r, 1000));
+            retryCount++;
           }
+        }
+
+        if (!pipelineReady) {
+          throw new Error("Pipeline loading timeout");
         }
 
         // 4. Get ICE servers
@@ -80,17 +110,39 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
         const candidates: IceCandidate[] = [];
 
         pc.onconnectionstatechange = () => {
-          console.log("🔌 Connection state:", pc.connectionState);
-          if (pc.connectionState === "connected") {
-            setStatus("connected");
-          } else if (pc.connectionState === "failed") {
-            setStatus("error");
-            setError("Connection failed");
+          const state = pc.connectionState;
+          console.log("🔌 Connection state:", state);
+
+          switch (state) {
+            case "connected":
+              setStatus("connected");
+              setError(null);
+              console.log("✅ WebRTC connected successfully");
+              break;
+            case "connecting":
+              console.log("⏳ WebRTC connecting...");
+              break;
+            case "failed":
+              // Don't stop the process, WebRTC sometimes recovers
+              console.log("⚠️ Connection failed, waiting for recovery...");
+              break;
+            case "disconnected":
+              console.log("⚠️ Connection disconnected, may reconnect...");
+              break;
+            case "closed":
+              console.log("🔒 Connection closed");
+              break;
           }
         };
 
         pc.oniceconnectionstatechange = () => {
-          console.log("🧊 ICE connection state:", pc.iceConnectionState);
+          const state = pc.iceConnectionState;
+          console.log("🧊 ICE state:", state);
+
+          // ICE connected can also indicate success
+          if (state === "connected" || state === "completed") {
+            console.log("✅ ICE connection established");
+          }
         };
 
         pc.ontrack = (event) => {
@@ -102,11 +154,14 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
 
         pc.onicecandidate = (event) => {
           if (event.candidate) {
+            console.log("🎯 ICE candidate found:", event.candidate.candidate?.substring(0, 50) + "...");
             candidates.push({
               candidate: event.candidate.candidate,
               sdpMid: event.candidate.sdpMid,
               sdpMLineIndex: event.candidate.sdpMLineIndex,
             });
+          } else {
+            console.log("🎯 ICE candidate gathering complete (null candidate)");
           }
         };
 
@@ -163,11 +218,13 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
         });
 
         // 10. Wait for ICE gathering and send candidates
+        console.log("⏳ Waiting for ICE gathering... Current state:", pc.iceGatheringState);
         await new Promise<void>((resolve) => {
           if (pc.iceGatheringState === "complete") {
             resolve();
           } else {
             pc.onicegatheringstatechange = () => {
+              console.log("🔄 ICE gathering state:", pc.iceGatheringState);
               if (pc.iceGatheringState === "complete") {
                 resolve();
               }
@@ -175,12 +232,20 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
           }
         });
 
+        console.log("📊 Total candidates collected:", candidates.length);
         if (candidates.length > 0) {
-          console.log("📤 Sending", candidates.length, "candidates");
-          await scopeApi.sendIceCandidates(answer.sessionId, candidates);
+          console.log("📤 Sending", candidates.length, "candidates to server...");
+          try {
+            await scopeApi.sendIceCandidates(answer.sessionId, candidates);
+            console.log("✅ Candidates sent successfully");
+          } catch (e) {
+            console.error("❌ Failed to send candidates:", e);
+          }
+        } else {
+          console.warn("⚠️ No ICE candidates to send!");
         }
 
-        console.log("✅ WebRTC connected");
+        console.log("🎬 WebRTC setup complete, waiting for connection...");
       } catch (err) {
         console.error("Connection error:", err);
         setStatus("error");
@@ -224,6 +289,29 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
     console.log("📤 Sent update:", message);
   }, []);
 
+  const replaceVideoTrack = useCallback((newStream: MediaStream) => {
+    if (!pcRef.current) {
+      console.error("Peer connection not available");
+      return false;
+    }
+
+    const videoTrack = newStream.getVideoTracks()[0];
+    if (!videoTrack) {
+      console.error("No video track in new stream");
+      return false;
+    }
+
+    const sender = pcRef.current.getSenders().find((s) => s.track?.kind === "video");
+    if (!sender) {
+      console.error("No video sender found");
+      return false;
+    }
+
+    sender.replaceTrack(videoTrack);
+    console.log("🔄 Replaced video track");
+    return true;
+  }, []);
+
   return {
     status,
     error,
@@ -231,5 +319,6 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
     connect,
     disconnect,
     updatePrompt,
+    replaceVideoTrack,
   };
 }

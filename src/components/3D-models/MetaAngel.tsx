@@ -21,13 +21,16 @@ interface GLTFMaterials {
   "Material.003": THREE.MeshStandardMaterial;
 }
 
-type MetaAngelProps = JSX.IntrinsicElements['group'] & {
+type MetaAngelProps = JSX.IntrinsicElements["group"] & {
   animationSpeed?: number;
-}
+};
 
-export default function MetaAngel({ animationSpeed = 1, ...props }: MetaAngelProps) {
+export default function MetaAngel({
+  animationSpeed = 1,
+  ...props
+}: MetaAngelProps) {
   const group = useRef<THREE.Group>(null);
-  const { nodes, materials, animations } = useGLTF("/metangel.glb");
+  const { nodes, materials, animations } = useGLTF("/metangel_1.glb");
   const n = nodes as unknown as GLTFNodes;
   const m = materials as unknown as GLTFMaterials;
   const { actions } = useAnimations(animations, group);
@@ -43,7 +46,16 @@ export default function MetaAngel({ animationSpeed = 1, ...props }: MetaAngelPro
     };
   }, [actions, animationSpeed]);
   return (
-    <group ref={group} {...props} dispose={null}>
+    <group
+      ref={group}
+      {...props}
+      dispose={null}
+      userData={{
+        interactable: true,
+        type: "metaangel",
+        getActionPrompt: () => "The MetaAngel awaits...",
+      }}
+    >
       <group name="Scene">
         <group name="Armature" rotation={[Math.PI / 2, 0, 0]} scale={0.01}>
           <skinnedMesh
@@ -86,4 +98,4 @@ export default function MetaAngel({ animationSpeed = 1, ...props }: MetaAngelPro
   );
 }
 
-useGLTF.preload("/metangel.glb");
+useGLTF.preload("/metangel_1.glb");

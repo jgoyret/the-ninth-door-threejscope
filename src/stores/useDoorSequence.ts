@@ -5,15 +5,21 @@ interface DoorSequenceState {
   sequence: number[];
   // Índice actual en la secuencia (qué puerta toca abrir)
   currentStep: number;
-  // Set de puertas que ya fueron abiertas (números 1-9)
+  // Set de puertas que ya fueron abiertas alguna vez (para la secuencia)
   openedDoors: Set<number>;
+  // Set de puertas que están físicamente abiertas ahora mismo
+  currentlyOpenDoors: Set<number>;
 
   // Chequea si una puerta está desbloqueada (puede abrirse)
   isDoorUnlocked: (doorNumber: number) => boolean;
-  // Chequea si una puerta ya fue abierta
+  // Chequea si una puerta ya fue abierta alguna vez
   isDoorOpened: (doorNumber: number) => boolean;
+  // Chequea si una puerta está físicamente abierta ahora
+  isDoorCurrentlyOpen: (doorNumber: number) => boolean;
   // Intenta abrir una puerta, retorna true si se pudo
   openDoor: (doorNumber: number) => boolean;
+  // Cierra una puerta
+  closeDoor: (doorNumber: number) => void;
   // Obtiene el número de la siguiente puerta a abrir
   getNextDoor: () => number | null;
   // Resetea el juego
@@ -27,6 +33,7 @@ export const useDoorSequence = create<DoorSequenceState>((set, get) => ({
   sequence: [1, 5, 7, 8, 4, 2, 6, 3, 9],
   currentStep: 0,
   openedDoors: new Set(),
+  currentlyOpenDoors: new Set(),
 
   isDoorUnlocked: (doorNumber) => {
     const { sequence, currentStep } = get();
@@ -37,8 +44,12 @@ export const useDoorSequence = create<DoorSequenceState>((set, get) => ({
     return get().openedDoors.has(doorNumber);
   },
 
+  isDoorCurrentlyOpen: (doorNumber) => {
+    return get().currentlyOpenDoors.has(doorNumber);
+  },
+
   openDoor: (doorNumber) => {
-    const { sequence, currentStep, openedDoors } = get();
+    const { sequence, currentStep, openedDoors, currentlyOpenDoors } = get();
 
     if (sequence[currentStep] !== doorNumber) {
       return false;
@@ -47,12 +58,23 @@ export const useDoorSequence = create<DoorSequenceState>((set, get) => ({
     const newOpenedDoors = new Set(openedDoors);
     newOpenedDoors.add(doorNumber);
 
+    const newCurrentlyOpenDoors = new Set(currentlyOpenDoors);
+    newCurrentlyOpenDoors.add(doorNumber);
+
     set({
       openedDoors: newOpenedDoors,
+      currentlyOpenDoors: newCurrentlyOpenDoors,
       currentStep: currentStep + 1,
     });
 
     return true;
+  },
+
+  closeDoor: (doorNumber) => {
+    const { currentlyOpenDoors } = get();
+    const newCurrentlyOpenDoors = new Set(currentlyOpenDoors);
+    newCurrentlyOpenDoors.delete(doorNumber);
+    set({ currentlyOpenDoors: newCurrentlyOpenDoors });
   },
 
   getNextDoor: () => {
@@ -64,6 +86,7 @@ export const useDoorSequence = create<DoorSequenceState>((set, get) => ({
     set({
       currentStep: 0,
       openedDoors: new Set(),
+      currentlyOpenDoors: new Set(),
     });
   },
 
@@ -72,6 +95,7 @@ export const useDoorSequence = create<DoorSequenceState>((set, get) => ({
       sequence,
       currentStep: 0,
       openedDoors: new Set(),
+      currentlyOpenDoors: new Set(),
     });
   },
 }));
