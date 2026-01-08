@@ -170,7 +170,7 @@ function Door({
     const opened = openDoorInSequence(doorNumber);
     if (opened) {
       setIsOpen(true);
-      onDoorOpen(doorNumber - 1); // onDoorOpen usa índice 0-based
+      onDoorOpen(doorNumber); // Pasa el número de puerta directamente (1-9)
 
       // Disparar evento especial para puerta 9
       if (doorNumber === 9) {

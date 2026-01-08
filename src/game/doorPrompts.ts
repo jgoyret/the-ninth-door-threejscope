@@ -22,7 +22,7 @@ export const doors: Record<string, DoorConfig> = {
     concept: "La máscara que usamos",
     image_url: "/images/doors/1.webp",
     prompt:
-      "endless corridor lined with floating masks made of glass, polished reflective surfaces, each mask showing a different emotion, theatrical liminal space, dream logic. Colors black and white.",
+      "kxsr, endless corridor lined with floating masks made of glass, polished reflective surfaces, each mask showing a different emotion, theatrical liminal space, dream logic. Colors black and white.",
     palette: {
       primary: "#1a1a2e",
       secondary: "#eaeaea",
@@ -36,7 +36,7 @@ export const doors: Record<string, DoorConfig> = {
     concept: "El otro yo, lo reprimido",
     image_url: "/images/doors/2.webp",
     prompt:
-      "dark distorted hallway, shadows moving independently, dark silhouette at the end mirroring your movements, uncanny architecture, psychological horror atmosphere",
+      "kxsr, dark distorted hallway, shadows moving independently, dark silhouette at the end mirroring your movements, uncanny architecture, psychological horror atmosphere",
     palette: {
       primary: "#0d0d0d",
       secondary: "#4a0e4e",
@@ -49,7 +49,7 @@ export const doors: Record<string, DoorConfig> = {
     concept: "Pensamiento, Sentimiento, Sensación, Intuición",
     image_url: "/images/doors/4.webp",
     prompt:
-      "corridor splitting into four paths, each with different element - fire water earth air, quaternary geometry, alchemical symbols on walls, crossroads of the mind",
+      "kxsr, corridor splitting into four paths, each with different element - fire water earth air, quaternary geometry, alchemical symbols on walls, crossroads of the mind",
     palette: {
       primary: "#2d3436",
       secondary: "#e17055",
@@ -62,7 +62,7 @@ export const doors: Record<string, DoorConfig> = {
     concept: "El océano infinito de símbolos compartidos",
     image_url: "/images/doors/8.webp",
     prompt:
-      "infinite spiral corridor with ancient symbols floating, hieroglyphs mandalas and archetypes emerging from walls, collective memory space, ancestral dream",
+      "kxsr, infinite spiral corridor with ancient symbols floating, hieroglyphs mandalas and archetypes emerging from walls, collective memory space, ancestral dream",
     palette: {
       primary: "#1e3799",
       secondary: "#f39c12",
@@ -76,7 +76,7 @@ export const doors: Record<string, DoorConfig> = {
     concept: "La guía interior, la intuición profunda",
     image_url: "/images/doors/7.webp",
     prompt:
-      "misty ethereal hallway, soft glowing light at the end, translucent wise figure waiting, library of infinite knowledge fading into fog, sacred geometry",
+      "kxsr, misty ethereal hallway, soft glowing light at the end, translucent wise figure waiting, library of infinite knowledge fading into fog, sacred geometry",
     palette: {
       primary: "#4a266a",
       secondary: "#e8e8e8",
@@ -90,7 +90,7 @@ export const doors: Record<string, DoorConfig> = {
     concept: "El centro, la integración",
     image_url: "/images/doors/5.webp",
     prompt:
-      "perfectly symmetrical mandala corridor, all paths converging to center, golden ratio architecture, integration of light and shadow, wholeness achieved",
+      "kxsr, perfectly symmetrical mandala corridor, all paths converging to center, golden ratio architecture, integration of light and shadow, wholeness achieved",
     palette: {
       primary: "#b8860b",
       secondary: "#ffffff",
@@ -103,7 +103,7 @@ export const doors: Record<string, DoorConfig> = {
     concept: "Lo femenino, la luz, creación",
     image_url: "/images/doors/3.webp",
     prompt:
-      "organic flowing corridor, bioluminescent walls like living tissue, water reflections, feminine curves, birth canal of light, nurturing space",
+      "kxsr, organic flowing corridor, bioluminescent walls like living tissue, water reflections, feminine curves, birth canal of light, nurturing space",
     palette: {
       primary: "#ffffff",
       secondary: "#ff6b9d",
@@ -117,7 +117,7 @@ export const doors: Record<string, DoorConfig> = {
     concept: "Lo masculino, la sombra, disolución",
     image_url: "/images/doors/6.webp",
     prompt:
-      "angular fragmented hallway, sharp geometric shards, structured darkness, masculine architecture, crystalline black mirrors, powerful dissolution",
+      "kxsr, angular fragmented hallway, sharp geometric shards, structured darkness, masculine architecture, crystalline black mirrors, powerful dissolution",
     palette: {
       primary: "#0a0a0a",
       secondary: "#3498db",
@@ -130,7 +130,7 @@ export const doors: Record<string, DoorConfig> = {
     archetype: "Individuación",
     concept: "La singularidad, transcendencia",
     image_url: "", // No image, direct transition to metaangel
-    prompt: "", // No prompt, this is the final transcendence
+    prompt: "kxsr, An endless dream", // No prompt, this is the final transcendence
     palette: {
       primary: "#ffffff",
       secondary: "#000000",

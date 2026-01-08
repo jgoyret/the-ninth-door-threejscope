@@ -33,6 +33,11 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
         setError(null);
         setStatus("checking-model");
 
+        // 0. Upload VACE reference images (non-blocking, errors are logged but ignored)
+        scopeApi.uploadVaceReferenceImages().catch((err) => {
+          console.warn("Failed to upload VACE reference images:", err);
+        });
+
         // 1. Check model status
         const modelData = await scopeApi.getModelStatus(pipelineId);
         console.log("📦 Model status:", modelData);
@@ -286,7 +291,26 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
     }
 
     dataChannelRef.current.send(JSON.stringify(message));
-    console.log("📤 Sent update:", message);
+    console.log("📤 Sent prompt update:", message);
+  }, []);
+
+  const updateVaceRefImages = useCallback((images: string[]) => {
+    if (!dataChannelRef.current) {
+      console.error("Data channel not available");
+      return;
+    }
+
+    if (dataChannelRef.current.readyState !== "open") {
+      console.error("Data channel not open");
+      return;
+    }
+
+    const message = {
+      vace_ref_images: images,
+    };
+
+    dataChannelRef.current.send(JSON.stringify(message));
+    console.log("📤 Sent vace_ref_images update:", message);
   }, []);
 
   const replaceVideoTrack = useCallback((newStream: MediaStream) => {
@@ -319,6 +343,7 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
     connect,
     disconnect,
     updatePrompt,
+    updateVaceRefImages,
     replaceVideoTrack,
   };
 }

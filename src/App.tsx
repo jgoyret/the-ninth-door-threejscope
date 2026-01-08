@@ -8,7 +8,7 @@ import { useCanvasManager } from "./stores/useCanvasManager";
 import { TitleScreen } from "./components/ui/TitleScreen";
 import { LoadingScreen } from "./components/ui/LoadingScreen";
 import { CanvasGame } from "./components/CanvasGame";
-import { DOOR_PROMPTS } from "./game/doorPrompts";
+import { getDoorByNumber } from "./game/doorPrompts";
 
 // Render resolution (Daydream will downscale as needed)
 const GAME_WIDTH = 1280;
@@ -55,6 +55,7 @@ function App() {
     connect,
     disconnect,
     updatePrompt,
+    updateVaceRefImages,
     replaceVideoTrack,
   } = useScopeConnection({
     onTrack: (stream) => {
@@ -82,12 +83,14 @@ function App() {
   }, [streamSource, isConnected, replaceVideoTrack]);
 
   // Update VACE settings when entering post-ninth-door state
-  // Send the same prompt as door 9 (index 8) with vaceScale 1
+  // Send the same prompt as door 9 with vaceScale 1
   useEffect(() => {
     if (isPostNinthDoor && isConnected) {
-      const door9Prompt = DOOR_PROMPTS[8]; // Door 9 = index 8
-      console.log("🚪 Post 9th door: Sending door 9 prompt with VACE scale 1");
-      updatePrompt(door9Prompt, { vaceScale: 1 });
+      const door9Config = getDoorByNumber(9);
+      if (door9Config?.prompt) {
+        console.log("🚪 Post 9th door: Sending door 9 prompt with VACE scale 1");
+        updatePrompt(door9Config.prompt, { vaceScale: 1 });
+      }
     }
   }, [isPostNinthDoor, isConnected, updatePrompt]);
 
@@ -151,6 +154,7 @@ function App() {
       >
         <GameProvider
           updatePrompt={updatePrompt}
+          updateVaceRefImages={updateVaceRefImages}
           isConnected={isConnected}
           debugMode={DEBUG_MODE}
           vaceScale={vaceScale}

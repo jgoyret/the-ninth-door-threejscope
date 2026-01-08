@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { getDoorByNumber } from "../game/doorPrompts";
 
-type AbsorptionState = "idle" | "absorbing" | "ready";
+type AbsorptionState = "idle" | "absorbing" | "ready" | "completing";
 
 interface OrbState {
   // El orbe que el jugador está cargando actualmente (null si no tiene ninguno)
@@ -25,7 +25,8 @@ interface OrbState {
   isOrbDelivered: (doorNumber: number) => boolean;
   startAbsorption: (doorNumber: number, color: string) => void;
   updateAbsorptionProgress: (progress: number) => void;
-  completeAbsorption: () => void;
+  startCompletingAbsorption: () => void; // Inicia transición suave
+  completeAbsorption: () => void; // Finaliza la absorción
   reset: () => void;
 }
 
@@ -85,6 +86,14 @@ export const useOrbStore = create<OrbState>((set, get) => ({
     if (clamped >= 1) {
       set({ absorptionState: "ready" });
     }
+  },
+
+  startCompletingAbsorption: () => {
+    const { absorptionState } = get();
+    if (absorptionState !== "absorbing" && absorptionState !== "ready") return;
+
+    console.log("🌟 Starting absorption completion transition...");
+    set({ absorptionState: "completing" });
   },
 
   completeAbsorption: () => {

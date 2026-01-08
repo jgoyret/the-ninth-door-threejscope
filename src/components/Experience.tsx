@@ -137,7 +137,7 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
     <>
       {/* Lighting and environment */}
       <Environment
-        background={true}
+        background={false}
         preset="night"
         backgroundBlurriness={0.1}
       />

@@ -51,9 +51,7 @@ export default function MetaAngel({
       {...props}
       dispose={null}
       userData={{
-        interactable: true,
         type: "metaangel",
-        getActionPrompt: () => "The MetaAngel awaits...",
       }}
     >
       <group name="Scene">

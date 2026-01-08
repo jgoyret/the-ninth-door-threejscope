@@ -33,13 +33,13 @@ export const useCanvasManager = create<CanvasManagerStore>((set, get) => ({
   setStreamSource: (source) => set({ streamSource: source }),
 
   onOrbDelivered: () => {
-    console.log("🔮 Orb delivered → showing AI canvas");
-    set({ visibleCanvas: "ai-output" });
+    console.log("🔮 Orb delivered → showing AI canvas, sending DEPTH to Daydream");
+    set({ visibleCanvas: "ai-output", streamSource: "depth" });
   },
 
   onDoorClosed: () => {
-    console.log("🚪 Door closed → showing Three.js canvas");
-    set({ visibleCanvas: "threejs" });
+    console.log("🚪 Door closed → showing Three.js canvas, sending THREEJS to Daydream");
+    set({ visibleCanvas: "threejs", streamSource: "threejs" });
   },
 
   onNinthDoorOpened: () => {
