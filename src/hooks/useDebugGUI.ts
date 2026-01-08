@@ -4,6 +4,7 @@ import type { StreamSource } from "../components/Experience";
 import { usePlayerPosition } from "../stores/usePlayerPosition";
 import { useRaycastDebug } from "../stores/useRaycastDebug";
 import { setGameStatePreset } from "../game/gameStates";
+import { useCanvasManager } from "../stores/useCanvasManager";
 
 export interface DebugParams {
   depthFar: number;
@@ -42,7 +43,43 @@ export function useDebugGUI({ initialValues, onChange }: UseDebugGUIOptions) {
     const typeController = raycastFolder.add(raycastData, "type").name("Type").disable();
     raycastFolder.open();
 
-    // Update position and raycast every 100ms
+    // Game state presets
+    const gameStateFolder = gui.addFolder("Game States");
+    const stateActions = {
+      initial: () => setGameStatePreset("initial"),
+      after9door: () => setGameStatePreset("after9door"),
+    };
+    gameStateFolder.add(stateActions, "initial").name("🔄 Reset to Initial");
+    gameStateFolder.add(stateActions, "after9door").name("🚪 After 9th Door");
+    gameStateFolder.open();
+
+    // Canvas view switcher (for debugging - see what each canvas shows)
+    const canvasViewFolder = gui.addFolder("Canvas View (Debug)");
+    const canvasViewData = { current: useCanvasManager.getState().visibleCanvas };
+    const canvasActions = {
+      threejs: () => {
+        useCanvasManager.getState().setVisibleCanvas("threejs");
+        canvasViewData.current = "threejs";
+        currentCanvasController.updateDisplay();
+      },
+      depth: () => {
+        useCanvasManager.getState().setVisibleCanvas("depth");
+        canvasViewData.current = "depth";
+        currentCanvasController.updateDisplay();
+      },
+      scope: () => {
+        useCanvasManager.getState().setVisibleCanvas("ai-output");
+        canvasViewData.current = "ai-output";
+        currentCanvasController.updateDisplay();
+      },
+    };
+    const currentCanvasController = canvasViewFolder.add(canvasViewData, "current").name("Current").disable();
+    canvasViewFolder.add(canvasActions, "threejs").name("👁️ Three.js");
+    canvasViewFolder.add(canvasActions, "depth").name("👁️ Depth");
+    canvasViewFolder.add(canvasActions, "scope").name("👁️ Scope (AI)");
+    canvasViewFolder.open();
+
+    // Update position, raycast, and canvas view every 100ms
     const positionInterval = setInterval(() => {
       const { x, y, z } = usePlayerPosition.getState();
       positionData.position = `${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)}`;
@@ -55,17 +92,14 @@ export function useDebugGUI({ initialValues, onChange }: UseDebugGUIOptions) {
       hitNameController.updateDisplay();
       distanceController.updateDisplay();
       typeController.updateDisplay();
-    }, 100);
 
-    // Game state presets
-    const gameStateFolder = gui.addFolder("Game States");
-    const stateActions = {
-      initial: () => setGameStatePreset("initial"),
-      after9door: () => setGameStatePreset("after9door"),
-    };
-    gameStateFolder.add(stateActions, "initial").name("🔄 Reset to Initial");
-    gameStateFolder.add(stateActions, "after9door").name("🚪 After 9th Door");
-    gameStateFolder.open();
+      // Update canvas view from store (in case game changed it)
+      const currentCanvas = useCanvasManager.getState().visibleCanvas;
+      if (canvasViewData.current !== currentCanvas) {
+        canvasViewData.current = currentCanvas;
+        currentCanvasController.updateDisplay();
+      }
+    }, 100);
 
     gui.add(paramsRef.current, "depthFar", 1, 50, 1)
       .name("Depth Far")

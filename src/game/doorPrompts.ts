@@ -130,7 +130,7 @@ export const doors: Record<string, DoorConfig> = {
     archetype: "Individuación",
     concept: "La singularidad, transcendencia",
     image_url: "", // No image, direct transition to metaangel
-    prompt: "kxsr, An endless dream", // No prompt, this is the final transcendence
+    prompt: "kxsr, An endless dream with elders creatures of the forest ", // No prompt, this is the final transcendence
     palette: {
       primary: "#ffffff",
       secondary: "#000000",

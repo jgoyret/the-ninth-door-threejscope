@@ -6,7 +6,7 @@ interface GameContextValue {
   onDoorOpen: (doorNumber: number) => void;
   onOrbDeliver: () => void;
   onExitAbsorption: () => void;
-  sendDreamPrompt: (prompt: string) => void;
+  sendDreamPrompt: (prompt: string, vaceScale: number) => void;
   canInteract: boolean;
   debugMode: boolean;
 }
@@ -99,7 +99,7 @@ export function GameProvider({
   }, [updateVaceScale, isConnected, debugMode]);
 
   const sendDreamPrompt = useCallback(
-    (prompt: string) => {
+    (prompt: string, vaceScale: number) => {
       if (debugMode) {
         console.log("[DEBUG] Dream prompt, but debug mode is active:", prompt);
         return;
@@ -110,10 +110,8 @@ export function GameProvider({
         return;
       }
 
-      // Random vaceScale between 0.4 and 0.7
-      const randomVaceScale = 0.4 + Math.random() * 0.3;
-      console.log(`💭 Sending dream prompt (vace_scale=${randomVaceScale.toFixed(2)}):`, prompt);
-      updatePrompt(prompt, { vaceScale: randomVaceScale });
+      console.log(`💭 Sending dream prompt (vace_scale=${vaceScale.toFixed(2)}):`, prompt);
+      updatePrompt(prompt, { vaceScale });
     },
     [updatePrompt, isConnected, debugMode]
   );

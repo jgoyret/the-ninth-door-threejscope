@@ -13,7 +13,7 @@ export function TitleScreen({ onStart }: TitleScreenProps) {
         alignItems: "center",
         justifyContent: "center",
         background:
-          "linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)",
+          "linear-gradient(180deg, #0a0a0a 0%, #2e2e2eff 50%, #0a0a0a 100%)",
         zIndex: 1000,
       }}
     >
@@ -21,11 +21,11 @@ export function TitleScreen({ onStart }: TitleScreenProps) {
       <div
         style={{
           position: "absolute",
-          width: 400,
-          height: 400,
+          width: 800,
+          height: 800,
           borderRadius: "50%",
           background:
-            "radial-gradient(circle, rgba(100, 100, 255, 0.15) 0%, transparent 70%)",
+            "radial-gradient(circle, rgba(53, 53, 53, 0.15) 0%, transparent 70%)",
           filter: "blur(40px)",
           pointerEvents: "none",
         }}
