@@ -4,7 +4,7 @@ import { usePlayerCommands } from "../stores/usePlayerCommands";
 
 // Spawn positions
 const SPAWN_INITIAL: [number, number, number] = [2.5, 5, 0];
-const SPAWN_AFTER_9TH_DOOR: [number, number, number] = [-17, 1.5, -5];
+const SPAWN_AFTER_9TH_DOOR: [number, number, number] = [-12, 1.5, 0];
 
 export type GameStatePreset = "initial" | "after9door";
 

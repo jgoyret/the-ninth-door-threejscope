@@ -1,6 +1,7 @@
 import { type RefObject, useEffect } from "react";
 import { Experience, type ExperienceRef } from "./Experience";
 import { GameOverlay } from "./ui/GameOverlay";
+import { AbsorptionUI } from "./ui/AbsorptionUI";
 import { useCanvasManager } from "../stores/useCanvasManager";
 
 interface CanvasGameProps {
@@ -28,6 +29,9 @@ export function CanvasGame({
       const depthCanvas = experienceRef.current?.getDepthCanvas();
       if (depthCanvas && depthContainerRef.current) {
         if (!depthContainerRef.current.contains(depthCanvas)) {
+          // Stretch canvas to fill container
+          depthCanvas.style.width = "100%";
+          depthCanvas.style.height = "100%";
           depthContainerRef.current.appendChild(depthCanvas);
         }
         clearInterval(interval);
@@ -71,7 +75,7 @@ export function CanvasGame({
           zIndex: visibleCanvas === "depth" ? 2 : 0,
           opacity: visibleCanvas === "depth" ? 1 : 0,
           pointerEvents: "none",
-          transition: "opacity 0.3s ease",
+          transition: "opacity 2s ease-in-out",
         }}
       />
 
@@ -90,7 +94,7 @@ export function CanvasGame({
           zIndex: visibleCanvas === "ai-output" ? 3 : 0,
           opacity: visibleCanvas === "ai-output" ? 1 : 0,
           pointerEvents: "none",
-          transition: "opacity 0.3s ease",
+          transition: "opacity 2s ease-in-out",
         }}
       />
 
@@ -105,6 +109,9 @@ export function CanvasGame({
       >
         <GameOverlay />
       </div>
+
+      {/* AbsorptionUI - maneja lógica global de absorción */}
+      <AbsorptionUI />
     </div>
   );
 }

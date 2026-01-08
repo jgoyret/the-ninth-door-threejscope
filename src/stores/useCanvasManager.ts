@@ -13,7 +13,8 @@ interface CanvasManagerStore {
   setStreamSource: (source: StreamSource) => void;
 
   // Transiciones automaticas del juego
-  onFirstDoorOpened: () => void;
+  onOrbDelivered: () => void;  // Cuando se entrega orbe → muestra canvas IA
+  onDoorClosed: () => void;    // Cuando se cierra puerta → vuelve a threejs
   onNinthDoorOpened: () => void;
   onLookingAtMetaAngel: () => void;
   onStopLookingAtMetaAngel: () => void;
@@ -31,8 +32,14 @@ export const useCanvasManager = create<CanvasManagerStore>((set, get) => ({
 
   setStreamSource: (source) => set({ streamSource: source }),
 
-  onFirstDoorOpened: () => {
+  onOrbDelivered: () => {
+    console.log("🔮 Orb delivered → showing AI canvas");
     set({ visibleCanvas: "ai-output" });
+  },
+
+  onDoorClosed: () => {
+    console.log("🚪 Door closed → showing Three.js canvas");
+    set({ visibleCanvas: "threejs" });
   },
 
   onNinthDoorOpened: () => {

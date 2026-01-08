@@ -39,16 +39,16 @@ type GLTFResult = GLTF & {
     Mesh004_1: THREE.Mesh;
     frame: THREE.Mesh;
     // Estructura estática
-    Pasillo: THREE.Mesh;
     Plane: THREE.Mesh;
     Paredes: THREE.Mesh;
+    Collider: THREE.Mesh;
   };
   materials: {
     ["door wood"]: THREE.MeshPhysicalMaterial;
     ["vray hr134.001"]: THREE.MeshPhysicalMaterial;
-    Material: THREE.MeshStandardMaterial;
     ["Red Carpet"]: THREE.MeshStandardMaterial;
     ["Wooden wall"]: THREE.MeshStandardMaterial;
+    ["Material.032"]: THREE.MeshStandardMaterial;
   };
 };
 
@@ -76,13 +76,16 @@ function Door({
 
   // Sistema de secuencia de puertas
   const isDoorUnlocked = useDoorSequence((state) => state.isDoorUnlocked);
+  const isDoorCurrentlyOpen = useDoorSequence(
+    (state) => state.isDoorCurrentlyOpen
+  );
   const openDoorInSequence = useDoorSequence((state) => state.openDoor);
   const getNextDoor = useDoorSequence((state) => state.getNextDoor);
 
+  // Orb store para verificar estado de absorción
+  const absorptionState = useOrbStore((state) => state.absorptionState);
+
   // Canvas manager para eventos de cambio de canvas
-  const onFirstDoorOpened = useCanvasManager(
-    (state) => state.onFirstDoorOpened
-  );
   const onNinthDoorOpened = useCanvasManager(
     (state) => state.onNinthDoorOpened
   );
@@ -102,6 +105,14 @@ function Door({
   // Vectores temporales para sincronizar collider
   const tempPosition = useRef(new THREE.Vector3());
   const tempQuaternion = useRef(new THREE.Quaternion());
+
+  // Sincronizar estado visual con el store (para cierre automático)
+  React.useEffect(() => {
+    const currentlyOpen = isDoorCurrentlyOpen(doorNumber);
+    if (isOpen !== currentlyOpen) {
+      setIsOpen(currentlyOpen);
+    }
+  }, [isDoorCurrentlyOpen, doorNumber, isOpen]);
 
   // Animación y sincronización del collider
   useFrame((_, delta) => {
@@ -132,6 +143,19 @@ function Door({
       return;
     }
 
+    const currentlyOpen = isDoorCurrentlyOpen(doorNumber);
+
+    // Si la puerta ya está abierta, no hacer nada (cierre es automático)
+    if (currentlyOpen) {
+      return;
+    }
+
+    // Si hay absorción en progreso, no se puede abrir otra puerta
+    if (absorptionState !== "idle") {
+      showMessage("Complete the absorption first", "warning");
+      return;
+    }
+
     // Verificar si esta puerta está desbloqueada en la secuencia
     if (!isDoorUnlocked(doorNumber)) {
       const nextDoor = getNextDoor();
@@ -148,10 +172,7 @@ function Door({
       setIsOpen(true);
       onDoorOpen(doorNumber - 1); // onDoorOpen usa índice 0-based
 
-      // Disparar eventos de cambio de canvas
-      if (doorNumber === 1) {
-        onFirstDoorOpened();
-      }
+      // Disparar evento especial para puerta 9
       if (doorNumber === 9) {
         onNinthDoorOpened();
       }
@@ -170,11 +191,19 @@ function Door({
           doorNumber,
           onInteract: toggleDoor,
           getActionPrompt: () => {
-            if (isOpenRef.current) return null;
             if (!canInteractRef.current) return null;
+            const currentlyOpen = isDoorCurrentlyOpen(doorNumberRef.current);
+
+            // Si está abierta, no mostrar prompt (cierre es automático)
+            if (currentlyOpen) return null;
+
+            // Si hay absorción en progreso, no mostrar prompt
+            if (absorptionState !== "idle") return null;
+
+            // Si está cerrada, mostrar prompt solo si está desbloqueada
             const unlocked = isDoorUnlocked(doorNumberRef.current);
             return unlocked
-              ? `Open door ${doorNumberRef.current} with E`
+              ? `Press E to open door ${doorNumberRef.current}`
               : null;
           },
         }}
@@ -238,27 +267,27 @@ function Door({
   );
 }
 
-// Posiciones de todas las puertas del pasillo
+// Posiciones de todas las puertas del pasillo (modelo small)
 const DOOR_POSITIONS: {
   position: [number, number, number];
   rotation?: [number, number, number];
 }[] = [
-  { position: [0, 0, 1.026] },
-  { position: [-5.969, 0, 1.026] },
-  { position: [-12.054, 0, 1.026] },
-  { position: [-17.946, 0, 1.026] },
-  { position: [-20.017, 0, -0.008], rotation: [Math.PI, -1.562, Math.PI] },
-  { position: [-0.019, -0.01, -0.999], rotation: [Math.PI, 0, Math.PI] },
-  { position: [-5.969, 0, -0.998], rotation: [Math.PI, 0, Math.PI] },
-  { position: [-12.08, 0, -0.998], rotation: [Math.PI, 0, Math.PI] },
-  { position: [-17.985, 0, -0.998], rotation: [Math.PI, 0, Math.PI] },
+  { position: [-7.995, 0, 1.026] }, // Door 1
+  { position: [-5.463, 0, 1.026] }, // Door 2
+  { position: [-2.783, 0, 1.026] }, // Door 3
+  { position: [0, 0, 1.026] }, // Door 4
+  { position: [-0.019, -0.01, -0.999], rotation: [Math.PI, 0, Math.PI] }, // Door 5
+  { position: [-2.743, 0, -0.998], rotation: [Math.PI, 0, Math.PI] }, // Door 6
+  { position: [-5.477, 0, -0.983], rotation: [Math.PI, 0, Math.PI] }, // Door 7
+  { position: [-8.023, 0, -0.975], rotation: [Math.PI, 0, Math.PI] }, // Door 8
+  { position: [-10.649, 0, -0.008], rotation: [Math.PI, -1.562, Math.PI] }, // Door 9
 ];
 
 // Posiciones de los planos con imágenes detrás de cada puerta
 // Ratio 2:3 (ancho:alto), tamaño aproximado de puerta
 const PLANE_WIDTH = 0.8 * 2;
 const PLANE_HEIGHT = 1.2 * 2;
-const PLANE_OFFSET_Z = 0.1; // Distancia detrás de la puerta
+const PLANE_OFFSET_Z = 0.05; // Distancia detrás de la puerta
 
 const DOOR_IMAGE_PLANES: {
   doorNumber: number;
@@ -268,50 +297,50 @@ const DOOR_IMAGE_PLANES: {
   // Puertas lado frontal (1-4) - miran hacia z negativo
   {
     doorNumber: 1,
-    position: [0, 1.1, 1.026 + PLANE_OFFSET_Z],
+    position: [-7.995, 1.1, 1.026 + PLANE_OFFSET_Z],
     rotation: [0, Math.PI, 0],
   },
   {
     doorNumber: 2,
-    position: [-5.969, 1.1, 1.026 + PLANE_OFFSET_Z],
+    position: [-5.463, 1.1, 1.026 + PLANE_OFFSET_Z],
     rotation: [0, Math.PI, 0],
   },
   {
     doorNumber: 3,
-    position: [-12.054, 1.1, 1.026 + PLANE_OFFSET_Z],
+    position: [-2.783, 1.1, 1.026 + PLANE_OFFSET_Z],
     rotation: [0, Math.PI, 0],
   },
   {
     doorNumber: 4,
-    position: [-17.946, 1.1, 1.026 + PLANE_OFFSET_Z],
+    position: [0, 1.1, 1.026 + PLANE_OFFSET_Z],
     rotation: [0, Math.PI, 0],
   },
-  // Puerta 5 - extremo del pasillo
+  // Puertas lado trasero (5-8) - miran hacia z positivo
   {
     doorNumber: 5,
-    position: [-20.017 - PLANE_OFFSET_Z, 1.1, -0.008],
-    rotation: [0, -Math.PI / 2, 0],
-  },
-  // Puertas lado trasero (6-9) - miran hacia z positivo
-  {
-    doorNumber: 6,
     position: [-0.019, 1.1, -0.999 - PLANE_OFFSET_Z],
     rotation: [0, 0, 0],
   },
   {
+    doorNumber: 6,
+    position: [-2.743, 1.1, -0.998 - PLANE_OFFSET_Z],
+    rotation: [0, 0, 0],
+  },
+  {
     doorNumber: 7,
-    position: [-5.969, 1.1, -0.998 - PLANE_OFFSET_Z],
+    position: [-5.477, 1.1, -0.983 - PLANE_OFFSET_Z],
     rotation: [0, 0, 0],
   },
   {
     doorNumber: 8,
-    position: [-12.08, 1.1, -0.998 - PLANE_OFFSET_Z],
+    position: [-8.023, 1.1, -0.975 - PLANE_OFFSET_Z],
     rotation: [0, 0, 0],
   },
+  // Puerta 9 - extremo del pasillo
   {
     doorNumber: 9,
-    position: [-17.985, 1.1, -0.998 - PLANE_OFFSET_Z],
-    rotation: [0, 0, 0],
+    position: [-10.649 - PLANE_OFFSET_Z, 1.1, -0.008],
+    rotation: [0, -Math.PI / 2, 0],
   },
 ];
 
@@ -328,10 +357,13 @@ function DoorImagePlane({
   rotation,
 }: DoorImagePlaneProps) {
   const doorConfig = getDoorByNumber(doorNumber);
-  const isDoorOpen = useDoorSequence((state) => state.openedDoors.has(doorNumber));
+  const isDoorOpen = useDoorSequence((state) =>
+    state.openedDoors.has(doorNumber)
+  );
   const collectOrb = useOrbStore((state) => state.collectOrb);
   const carriedOrb = useOrbStore((state) => state.carriedOrb);
   const isOrbDelivered = useOrbStore((state) => state.isOrbDelivered);
+  const absorptionState = useOrbStore((state) => state.absorptionState);
 
   // No renderizar si no hay imagen (ej: puerta 9)
   if (!doorConfig?.image_url) return null;
@@ -339,11 +371,13 @@ function DoorImagePlane({
   const texture = useTexture(doorConfig.image_url);
 
   // El orbe ya fue recolectado de esta puerta o ya fue entregado?
-  const alreadyCollected = carriedOrb?.doorNumber === doorNumber || isOrbDelivered(doorNumber);
+  const alreadyCollected =
+    carriedOrb?.doorNumber === doorNumber || isOrbDelivered(doorNumber);
 
   const handleCollect = () => {
     if (!isDoorOpen) return;
     if (alreadyCollected) return;
+    if (absorptionState !== "idle") return; // Hay absorción en progreso
     if (carriedOrb !== null) {
       // Ya tiene un orbe, no puede recoger otro
       console.log("🔮 Already carrying an orb!");
@@ -363,21 +397,24 @@ function DoorImagePlane({
         getActionPrompt: () => {
           if (!isDoorOpen) return null;
           if (alreadyCollected) return null;
+          if (absorptionState !== "idle") return null; // No mostrar si hay absorción
           if (carriedOrb !== null) return "Deliver current orb first";
           return `Press E to collect orb (Door ${doorNumber})`;
         },
         onInteract: handleCollect,
       }}
     >
-      <mesh>
-        <planeGeometry args={[PLANE_WIDTH, PLANE_HEIGHT]} />
-        <MeshDistortMaterial
-          distort={0.2}
-          speed={1}
-          map={texture}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      <RigidBody type="fixed" colliders="trimesh">
+        <mesh>
+          <planeGeometry args={[PLANE_WIDTH, PLANE_HEIGHT]} />
+          <MeshDistortMaterial
+            distort={0.2}
+            speed={1}
+            map={texture}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      </RigidBody>
     </group>
   );
 }
@@ -387,7 +424,7 @@ const OniricHallway = forwardRef<
   React.JSX.IntrinsicElements["group"]
 >(function OniricHallway(props, ref) {
   const { nodes, materials } = useGLTF(
-    "/Oniric_Hallway.glb"
+    "/Oniric_Hallway_small.glb"
   ) as unknown as GLTFResult;
 
   // El ref ya no controla una puerta específica, pero lo mantenemos por compatibilidad
@@ -426,14 +463,6 @@ const OniricHallway = forwardRef<
         {/* Estructura estática CON colliders */}
         <RigidBody type="fixed" colliders="trimesh">
           <mesh
-            name="Pasillo"
-            castShadow
-            receiveShadow
-            geometry={nodes.Pasillo.geometry}
-            material={materials.Material}
-            position={[-0.003, 0.002, 0.02]}
-          />
-          <mesh
             name="Plane"
             castShadow
             receiveShadow
@@ -449,6 +478,14 @@ const OniricHallway = forwardRef<
             material={materials["Wooden wall"]}
             position={[-0.003, 0.002, 0.02]}
           />
+          <mesh
+            name="Collider"
+            castShadow
+            receiveShadow
+            geometry={nodes.Collider.geometry}
+            material={materials["Material.032"]}
+            position={[-0.003, 0.913, 0.007]}
+          />
         </RigidBody>
       </group>
     </group>
@@ -457,4 +494,4 @@ const OniricHallway = forwardRef<
 
 export default OniricHallway;
 
-useGLTF.preload("/Oniric_Hallway.glb");
+useGLTF.preload("/Oniric_Hallway_small.glb");

@@ -121,9 +121,12 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
         <directionalLight position={[5, 5, -5]} intensity={1} />
         <OrbitControls makeDefault target={[-10, 1, 0]} />
         <Physics gravity={[0, -9.81, 0]}>
-          <CollectorOrb position={[4, 1.2, 0]} scale={0.5} />
+          <CollectorOrb position={[5, 1.2, 0]} scale={0.5} />
           <OniricHallway />
-          <BehindNinthDoor position={[-18, 1.5, -10]} />
+          <BehindNinthDoor
+            position={[-20, 1.5, 0]}
+            rotation={[0, Math.PI / 2, 0]}
+          />
         </Physics>
       </>
     );
@@ -154,10 +157,15 @@ function Scene({ width, height, depthFar, onDepthCanvasReady }: SceneProps) {
           onLookingAt={handleLookingAt}
         />
         {/* Collector Orb - al inicio del pasillo */}
-        {!hallwayHidden && <CollectorOrb position={[2, 1.2, 0]} scale={0.5} />}
+        {!hallwayHidden && <CollectorOrb position={[5, 1.2, 0]} scale={0.5} />}
         {/* Hallway con puertas interactivas - hidden after sphere interaction */}
         {!hallwayHidden && <OniricHallway />}
-        {ninthDoorOpen && <BehindNinthDoor position={[-18, 1.5, -10]} />}
+        {ninthDoorOpen && (
+          <BehindNinthDoor
+            position={[-20, 1.5, 0]}
+            rotation={[0, Math.PI / 2, 0]}
+          />
+        )}
       </Physics>
     </>
   );

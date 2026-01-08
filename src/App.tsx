@@ -10,17 +10,18 @@ import { LoadingScreen } from "./components/ui/LoadingScreen";
 import { CanvasGame } from "./components/CanvasGame";
 import { DOOR_PROMPTS } from "./game/doorPrompts";
 
-const GAME_WIDTH = 640;
-const GAME_HEIGHT = 352;
+// Render resolution (Daydream will downscale as needed)
+const GAME_WIDTH = 1280;
+const GAME_HEIGHT = 704;
 
 // Debug mode: true = OrbitControls only, false = normal game
-const DEBUG_MODE = true;
+const DEBUG_MODE = false;
 
 function App() {
   const experienceRef = useRef<ExperienceRef>(null);
   const outputVideoRef = useRef<HTMLVideoElement>(null);
   const depthContainerRef = useRef<HTMLDivElement>(null);
-  const [prompt, setPrompt] = useState(
+  const [prompt] = useState(
     "A magical forest. Elder creatures are guideing you."
   );
   const [depthFar, setDepthFar] = useState(30);
@@ -107,17 +108,6 @@ function App() {
     });
   }
 
-  function handleStop() {
-    disconnect();
-    if (outputVideoRef.current) {
-      outputVideoRef.current.srcObject = null;
-    }
-  }
-
-  function handleUpdatePrompt() {
-    updatePrompt(prompt, { vaceScale });
-  }
-
   function handleBackToTitle() {
     disconnect();
     resetGame();
@@ -163,6 +153,7 @@ function App() {
           updatePrompt={updatePrompt}
           isConnected={isConnected}
           debugMode={DEBUG_MODE}
+          vaceScale={vaceScale}
         >
           <CanvasGame
             experienceRef={experienceRef}
@@ -173,113 +164,6 @@ function App() {
             depthFar={depthFar}
           />
         </GameProvider>
-
-        {/* Control bar - only visible when playing, hidden in debug mode */}
-        {!DEBUG_MODE && (
-          <div
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              backgroundColor: "rgba(20, 20, 20, 0.95)",
-              borderTop: "2px solid rgba(255, 255, 255, 0.1)",
-              padding: "16px 24px",
-              display: "flex",
-              alignItems: "center",
-              gap: 16,
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            {/* Status indicator */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                minWidth: 140,
-              }}
-            >
-              <div
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: "50%",
-                  backgroundColor: isConnected ? "#4CAF50" : "#666",
-                  boxShadow: isConnected
-                    ? "0 0 10px rgba(76, 175, 80, 0.8)"
-                    : "none",
-                }}
-              />
-              <span style={{ fontSize: 14, fontWeight: 500, color: "white" }}>
-                {isConnected ? "Streaming" : "Not streaming"}
-              </span>
-            </div>
-
-            {/* Prompt input */}
-            <input
-              type="text"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Enter your prompt..."
-              data-daydream-ui
-              style={{
-                flex: 1,
-                padding: "10px 16px",
-                fontSize: 14,
-                backgroundColor: "rgba(255, 255, 255, 0.1)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-                borderRadius: 6,
-                color: "white",
-                outline: "none",
-              }}
-            />
-
-            {/* Action buttons */}
-            {isConnected && (
-              <>
-                <button
-                  onClick={handleUpdatePrompt}
-                  data-daydream-ui
-                  style={{
-                    padding: "10px 24px",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    backgroundColor: "#2196F3",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    minWidth: 100,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  Update
-                </button>
-                <button
-                  onClick={handleStop}
-                  data-daydream-ui
-                  style={{
-                    padding: "10px 24px",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    backgroundColor: "#f44336",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    minWidth: 100,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  Stop
-                </button>
-              </>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

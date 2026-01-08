@@ -14,9 +14,10 @@ interface GameProviderProps {
   updatePrompt: (prompt: string, options?: { weight?: number; vaceScale?: number }) => void;
   isConnected: boolean;
   debugMode?: boolean;
+  vaceScale?: number;
 }
 
-export function GameProvider({ children, updatePrompt, isConnected, debugMode = false }: GameProviderProps) {
+export function GameProvider({ children, updatePrompt, isConnected, debugMode = false, vaceScale = 0.45 }: GameProviderProps) {
   const onDoorOpen = useCallback(
     (doorIndex: number) => {
       if (debugMode) {
@@ -31,13 +32,13 @@ export function GameProvider({ children, updatePrompt, isConnected, debugMode = 
 
       const prompt = DOOR_PROMPTS[doorIndex];
       if (prompt) {
-        console.log(`Door ${doorIndex} opened, sending prompt:`, prompt);
-        updatePrompt(prompt);
+        console.log(`Door ${doorIndex} opened, sending prompt with vace_context_scale=${vaceScale}:`, prompt);
+        updatePrompt(prompt, { vaceScale });
       } else {
         console.warn(`No prompt found for door index ${doorIndex}`);
       }
     },
-    [updatePrompt, isConnected, debugMode]
+    [updatePrompt, isConnected, debugMode, vaceScale]
   );
 
   return (
