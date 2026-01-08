@@ -8,6 +8,7 @@ interface CanvasManagerStore {
   streamSource: StreamSource;
   isPostNinthDoor: boolean;
   hallwayHidden: boolean;
+  isExitBlending: boolean; // True during the 5 second exit blend transition
 
   setVisibleCanvas: (canvas: VisibleCanvas) => void;
   setStreamSource: (source: StreamSource) => void;
@@ -15,6 +16,8 @@ interface CanvasManagerStore {
   // Transiciones automaticas del juego
   onOrbDelivered: () => void;  // Cuando se entrega orbe → muestra canvas IA
   onDoorClosed: () => void;    // Cuando se cierra puerta → vuelve a threejs
+  startExitBlend: () => void;  // Start the smooth exit blend (changes stream, keeps AI visible)
+  completeExitBlend: () => void; // Complete the blend (hides AI canvas)
   onNinthDoorOpened: () => void;
   onLookingAtMetaAngel: () => void;
   onStopLookingAtMetaAngel: () => void;
@@ -27,6 +30,7 @@ export const useCanvasManager = create<CanvasManagerStore>((set, get) => ({
   streamSource: "threejs",
   isPostNinthDoor: false,
   hallwayHidden: false,
+  isExitBlending: false,
 
   setVisibleCanvas: (canvas) => set({ visibleCanvas: canvas }),
 
@@ -39,7 +43,18 @@ export const useCanvasManager = create<CanvasManagerStore>((set, get) => ({
 
   onDoorClosed: () => {
     console.log("🚪 Door closed → showing Three.js canvas, sending THREEJS to Daydream");
-    set({ visibleCanvas: "threejs", streamSource: "threejs" });
+    set({ visibleCanvas: "threejs", streamSource: "threejs", isExitBlending: false });
+  },
+
+  startExitBlend: () => {
+    console.log("🌅 Starting exit blend → sending THREEJS to Daydream, AI canvas still visible");
+    // Change stream source to threejs but keep AI canvas visible for blending
+    set({ streamSource: "threejs", isExitBlending: true });
+  },
+
+  completeExitBlend: () => {
+    console.log("✨ Exit blend complete → hiding AI canvas");
+    set({ visibleCanvas: "threejs", isExitBlending: false });
   },
 
   onNinthDoorOpened: () => {
@@ -74,5 +89,6 @@ export const useCanvasManager = create<CanvasManagerStore>((set, get) => ({
       streamSource: "threejs",
       isPostNinthDoor: false,
       hallwayHidden: false,
+      isExitBlending: false,
     }),
 }));

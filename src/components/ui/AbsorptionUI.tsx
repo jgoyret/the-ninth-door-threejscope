@@ -3,10 +3,11 @@ import { useOrbStore } from "../../stores/useOrbStore";
 import { useCanvasManager } from "../../stores/useCanvasManager";
 import { useDoorSequence } from "../../stores/useDoorSequence";
 import { useGameUI } from "../../stores/useGameUI";
+import { useGame } from "../../game";
 
 const PROMPT_DELAY = 20000; // 20 segundos después de iniciar absorción
-const CANVAS_TRANSITION_DELAY = 1500; // 1.5 seg antes de cambiar canvas
-const COMPLETE_DELAY = 2500; // 2.5 seg para finalizar absorción
+const BLEND_START_DELAY = 10000; // 10 seg después de presionar E para iniciar el blend
+const BLEND_DURATION = 5000; // 5 seg de blend suave entre canvas IA y threejs
 const MESSAGE_DELAY = 2000; // 2 seg antes de mostrar "Door X is calling"
 
 /**
@@ -17,10 +18,12 @@ export function AbsorptionUI() {
   const absorptionState = useOrbStore((state) => state.absorptionState);
   const startCompletingAbsorption = useOrbStore((state) => state.startCompletingAbsorption);
   const completeAbsorption = useOrbStore((state) => state.completeAbsorption);
-  const onDoorClosed = useCanvasManager((state) => state.onDoorClosed);
+  const startExitBlend = useCanvasManager((state) => state.startExitBlend);
+  const completeExitBlend = useCanvasManager((state) => state.completeExitBlend);
   const getNextDoor = useDoorSequence((state) => state.getNextDoor);
   const showMessage = useGameUI((state) => state.showMessage);
   const clearMessage = useGameUI((state) => state.clearMessage);
+  const { onExitAbsorption } = useGame();
 
   const promptShown = useRef(false);
   const timeoutRef = useRef<number | null>(null);
@@ -65,19 +68,25 @@ export function AbsorptionUI() {
         // 2. Iniciar transición del orbe (estado "completing")
         startCompletingAbsorption();
 
-        // 3. Después de 1.5 seg, cambiar canvas (fade a ThreeJS)
-        setTimeout(() => {
-          console.log("🎬 Transitioning canvas to ThreeJS...");
-          onDoorClosed();
-        }, CANVAS_TRANSITION_DELAY);
+        // 3. Cambiar stream a threejs y enviar vace_context_scale=1
+        useCanvasManager.getState().setStreamSource("threejs");
+        onExitAbsorption();
+        console.log("🎬 Stream changed to threejs, vace_context_scale=1");
 
-        // 4. Después de 2.5 seg, finalizar absorción
+        // 4. Después de 10 seg, iniciar el blend (fade out del canvas IA)
         setTimeout(() => {
-          console.log("🔮 Finalizing absorption...");
+          console.log("🌅 Starting 5s blend...");
+          startExitBlend();
+        }, BLEND_START_DELAY);
+
+        // 5. Después de 10 + 5 seg (blend completo), ocultar canvas IA y finalizar
+        setTimeout(() => {
+          console.log("🔮 Blend complete, finalizing...");
+          completeExitBlend();
           completeAbsorption();
-        }, COMPLETE_DELAY);
+        }, BLEND_START_DELAY + BLEND_DURATION);
 
-        // 5. Después de 2 seg más, mostrar mensaje de siguiente puerta
+        // 6. Después de 2 seg más, mostrar mensaje de siguiente puerta
         setTimeout(() => {
           const nextDoor = getNextDoor();
           if (nextDoor) {
@@ -86,7 +95,7 @@ export function AbsorptionUI() {
             showMessage("All doors completed!", "info");
           }
           isCompleting.current = false;
-        }, COMPLETE_DELAY + MESSAGE_DELAY);
+        }, BLEND_START_DELAY + BLEND_DURATION + MESSAGE_DELAY);
       }
     };
 
@@ -99,10 +108,12 @@ export function AbsorptionUI() {
     absorptionState,
     startCompletingAbsorption,
     completeAbsorption,
-    onDoorClosed,
+    startExitBlend,
+    completeExitBlend,
     getNextDoor,
     showMessage,
     clearMessage,
+    onExitAbsorption,
   ]);
 
   // Limpiar mensaje cuando el componente se desmonta

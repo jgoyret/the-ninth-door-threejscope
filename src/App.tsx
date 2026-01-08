@@ -56,6 +56,7 @@ function App() {
     disconnect,
     updatePrompt,
     updateVaceRefImages,
+    updateVaceScale,
     replaceVideoTrack,
   } = useScopeConnection({
     onTrack: (stream) => {
@@ -155,6 +156,7 @@ function App() {
         <GameProvider
           updatePrompt={updatePrompt}
           updateVaceRefImages={updateVaceRefImages}
+          updateVaceScale={updateVaceScale}
           isConnected={isConnected}
           debugMode={DEBUG_MODE}
           vaceScale={vaceScale}

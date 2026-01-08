@@ -336,6 +336,25 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
     return true;
   }, []);
 
+  const updateVaceScale = useCallback((vaceScale: number) => {
+    if (!dataChannelRef.current) {
+      console.error("Data channel not available");
+      return;
+    }
+
+    if (dataChannelRef.current.readyState !== "open") {
+      console.error("Data channel not open");
+      return;
+    }
+
+    const message = {
+      vace_context_scale: vaceScale,
+    };
+
+    dataChannelRef.current.send(JSON.stringify(message));
+    console.log("📤 Sent vace_context_scale update:", message);
+  }, []);
+
   return {
     status,
     error,
@@ -344,6 +363,7 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
     disconnect,
     updatePrompt,
     updateVaceRefImages,
+    updateVaceScale,
     replaceVideoTrack,
   };
 }

@@ -9,6 +9,8 @@ import * as THREE from "three";
 import { usePlayerPosition } from "../stores/usePlayerPosition";
 import { usePlayerCommands } from "../stores/usePlayerCommands";
 import { useRaycastDebug } from "../stores/useRaycastDebug";
+import { useGameState } from "../stores/useGameState";
+import { useGameUI } from "../stores/useGameUI";
 
 interface PlayerProps {
   speed?: number;
@@ -207,6 +209,15 @@ const Player = forwardRef<PlayerRef, PlayerProps>(function Player(
 
       vx = (forward.x * inputZ + right.x * inputX) * runSpeed;
       vz = (forward.z * inputZ + right.z * inputX) * runSpeed;
+
+      // Detect first movement and show initial door prompt
+      if ((vx !== 0 || vz !== 0)) {
+        const { hasShownInitialPrompt, markInitialPromptShown } = useGameState.getState();
+        if (!hasShownInitialPrompt) {
+          markInitialPromptShown();
+          useGameUI.getState().showMessage("Door 1 is calling...", "info");
+        }
+      }
     }
 
     const currentVel = rbRef.current.linvel();

@@ -22,6 +22,7 @@ export function CanvasGame({
   depthFar,
 }: CanvasGameProps) {
   const visibleCanvas = useCanvasManager((state) => state.visibleCanvas);
+  const isExitBlending = useCanvasManager((state) => state.isExitBlending);
 
   // Mount depth canvas when ready
   useEffect(() => {
@@ -91,10 +92,13 @@ export function CanvasGame({
           width: "100%",
           height: "100%",
           objectFit: "cover",
-          zIndex: visibleCanvas === "ai-output" ? 3 : 0,
-          opacity: visibleCanvas === "ai-output" ? 1 : 0,
+          zIndex: visibleCanvas === "ai-output" || isExitBlending ? 3 : 0,
+          opacity: isExitBlending ? 0 : visibleCanvas === "ai-output" ? 1 : 0,
           pointerEvents: "none",
-          transition: "opacity 2s ease-in-out",
+          // 5s transition during exit blend, 2s for normal transitions
+          transition: isExitBlending
+            ? "opacity 5s ease-in-out"
+            : "opacity 2s ease-in-out",
         }}
       />
 

@@ -8,10 +8,14 @@ interface GameStateStore {
   startGame: () => void;
   onStreamReady: () => void;
   reset: () => void;
+  // Initial prompt tracking
+  hasShownInitialPrompt: boolean;
+  markInitialPromptShown: () => void;
 }
 
 export const useGameState = create<GameStateStore>((set) => ({
   phase: "title",
+  hasShownInitialPrompt: false,
 
   setPhase: (phase) => set({ phase }),
 
@@ -19,5 +23,7 @@ export const useGameState = create<GameStateStore>((set) => ({
 
   onStreamReady: () => set({ phase: "playing" }),
 
-  reset: () => set({ phase: "title" }),
+  reset: () => set({ phase: "title", hasShownInitialPrompt: false }),
+
+  markInitialPromptShown: () => set({ hasShownInitialPrompt: true }),
 }));

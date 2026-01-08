@@ -5,6 +5,7 @@ import { scopeApi } from "../services/scopeApi";
 interface GameContextValue {
   onDoorOpen: (doorNumber: number) => void;
   onOrbDeliver: () => void;
+  onExitAbsorption: () => void;
   canInteract: boolean;
   debugMode: boolean;
 }
@@ -15,12 +16,13 @@ interface GameProviderProps {
   children: ReactNode;
   updatePrompt: (prompt: string, options?: { weight?: number; vaceScale?: number }) => void;
   updateVaceRefImages: (images: string[]) => void;
+  updateVaceScale: (vaceScale: number) => void;
   isConnected: boolean;
   debugMode?: boolean;
   vaceScale?: number;
 }
 
-export function GameProvider({ children, updatePrompt, updateVaceRefImages, isConnected, debugMode = false, vaceScale = 0.45 }: GameProviderProps) {
+export function GameProvider({ children, updatePrompt, updateVaceRefImages, updateVaceScale, isConnected, debugMode = false, vaceScale = 0.45 }: GameProviderProps) {
   const onDoorOpen = useCallback(
     (doorNumber: number) => {
       if (debugMode) {
@@ -64,8 +66,23 @@ export function GameProvider({ children, updatePrompt, updateVaceRefImages, isCo
     }
   }, [updateVaceRefImages, isConnected, debugMode]);
 
+  const onExitAbsorption = useCallback(() => {
+    if (debugMode) {
+      console.log("[DEBUG] Exit absorption, but debug mode is active");
+      return;
+    }
+
+    if (!isConnected) {
+      console.log("Cannot update vace_context_scale - stream not connected");
+      return;
+    }
+
+    console.log("🌅 Exit absorption: sending vace_context_scale=0.8");
+    updateVaceScale(0.8);
+  }, [updateVaceScale, isConnected, debugMode]);
+
   return (
-    <GameContext.Provider value={{ onDoorOpen, onOrbDeliver, canInteract: isConnected || debugMode, debugMode }}>
+    <GameContext.Provider value={{ onDoorOpen, onOrbDeliver, onExitAbsorption, canInteract: isConnected || debugMode, debugMode }}>
       {children}
     </GameContext.Provider>
   );
