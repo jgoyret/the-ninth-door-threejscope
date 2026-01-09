@@ -34,6 +34,10 @@ The game manages three canvases simultaneously:
 2. **Depth Canvas** – A grayscale render representing scene depth (closer = lighter, farther = darker)
 3. **AI Output Canvas** – The video stream returned by Scope
 
+#### How the Depth Canvas is Generated
+
+The depth canvas uses Three.js [DepthTexture](https://threejs.org/docs/#api/en/textures/DepthTexture) to capture the Z-buffer of the scene. A post-process shader converts these depth values to a grayscale image where closer objects appear lighter and farther objects appear darker. The result is copied to a standard 2D canvas that serves as the WebRTC stream source.
+
 At any moment, only one canvas is visible to the player, but all three are always active. The game dynamically decides:
 - Which canvas to show the player (`visibleCanvas`)
 - Which canvas to send to Scope (`streamSource`)
