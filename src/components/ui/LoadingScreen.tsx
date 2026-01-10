@@ -1,3 +1,5 @@
+import { useScopeUrl } from "../../stores/useScopeUrl";
+
 const STATUS_LABELS: Record<string, string> = {
   idle: "Initializing...",
   "checking-model": "Checking model...",
@@ -33,8 +35,15 @@ function getErrorMessage(error: string): string {
 }
 
 export function LoadingScreen({ status, error, onBack }: LoadingScreenProps) {
-  const hasError = !!error || status === "error";
-  const errorMessage = error ? getErrorMessage(error) : "Connection failed";
+  const scopeUrl = useScopeUrl((state) => state.url);
+  const isMissingUrl = !scopeUrl || scopeUrl === "when_serverless";
+
+  const hasError = isMissingUrl || !!error || status === "error";
+  const errorMessage = isMissingUrl
+    ? "Missing Scope URL"
+    : error
+      ? getErrorMessage(error)
+      : "Connection failed";
   const statusText = hasError ? errorMessage : STATUS_LABELS[status] || status;
 
   return (
@@ -106,7 +115,9 @@ export function LoadingScreen({ status, error, onBack }: LoadingScreenProps) {
             marginBottom: 32,
           }}
         >
-          The Scope server is not running or unavailable
+          {isMissingUrl
+            ? "Please add a Scope deployment URL in the title screen"
+            : "The Scope server is not running or unavailable"}
         </p>
       )}
 
