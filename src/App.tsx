@@ -9,6 +9,7 @@ import { TitleScreen } from "./components/ui/TitleScreen";
 import { LoadingScreen } from "./components/ui/LoadingScreen";
 import { CanvasGame } from "./components/CanvasGame";
 import { getDoorByNumber } from "./game/doorPrompts";
+import { Analytics } from "@vercel/analytics/react";
 
 // Render resolution (Daydream will downscale as needed)
 const GAME_WIDTH = 1280;
@@ -130,6 +131,7 @@ function App() {
         overflow: "hidden",
       }}
     >
+      <Analytics />
       {/* Title Screen - skip in debug mode */}
       {!DEBUG_MODE && phase === "title" && (
         <TitleScreen onStart={handleStart} />
@@ -143,7 +145,6 @@ function App() {
           onBack={handleBackToTitle}
         />
       )}
-
 
       {/* Game - always renders but hidden during title/loading (always visible in debug mode) */}
       <div
