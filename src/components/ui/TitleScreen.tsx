@@ -1,8 +1,23 @@
+import { useState } from "react";
+import { useScopeUrl } from "../../stores/useScopeUrl";
+
 interface TitleScreenProps {
   onStart: () => void;
 }
 
 export function TitleScreen({ onStart }: TitleScreenProps) {
+  const { setUrl } = useScopeUrl();
+  const [inputValue, setInputValue] = useState("");
+
+  const handleStart = () => {
+    if (inputValue.trim()) {
+      // Remove trailing slash to avoid API errors
+      const cleanUrl = inputValue.trim().replace(/\/+$/, "");
+      setUrl(cleanUrl);
+    }
+    onStart();
+  };
+
   return (
     <div
       style={{
@@ -62,7 +77,7 @@ export function TitleScreen({ onStart }: TitleScreenProps) {
 
       {/* Start button */}
       <button
-        onClick={onStart}
+        onClick={handleStart}
         style={{
           padding: "16px 48px",
           fontSize: 16,
@@ -87,6 +102,32 @@ export function TitleScreen({ onStart }: TitleScreenProps) {
       >
         Start
       </button>
+
+      {/* Scope URL input */}
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        placeholder="Scope URL"
+        style={{
+          marginTop: 24,
+          width: 400,
+          padding: "12px 16px",
+          fontSize: 14,
+          color: "white",
+          background: "rgba(255, 255, 255, 0.05)",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+          borderRadius: 4,
+          outline: "none",
+          textAlign: "center",
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.4)";
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.2)";
+        }}
+      />
 
       {/* Powered by */}
       <p

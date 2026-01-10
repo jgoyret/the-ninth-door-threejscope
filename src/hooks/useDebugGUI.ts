@@ -13,15 +13,18 @@ export interface DebugParams {
 }
 
 interface UseDebugGUIOptions {
+  enabled?: boolean;
   initialValues: DebugParams;
   onChange: (params: DebugParams) => void;
 }
 
-export function useDebugGUI({ initialValues, onChange }: UseDebugGUIOptions) {
+export function useDebugGUI({ enabled = true, initialValues, onChange }: UseDebugGUIOptions) {
   const guiRef = useRef<GUI | null>(null);
   const paramsRef = useRef<DebugParams>({ ...initialValues });
 
   useEffect(() => {
+    if (!enabled) return;
+
     const gui = new GUI({ title: "Debug Controls" });
     guiRef.current = gui;
 
@@ -128,7 +131,7 @@ export function useDebugGUI({ initialValues, onChange }: UseDebugGUIOptions) {
       clearInterval(positionInterval);
       gui.destroy();
     };
-  }, []);
+  }, [enabled]);
 
   // Update GUI when external values change
   useEffect(() => {

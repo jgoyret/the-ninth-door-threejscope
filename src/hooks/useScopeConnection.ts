@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from "react";
 import {
   scopeApi,
   DEFAULT_PIPELINE_PARAMS,
-  PIPELINE_PARAMS_WITH_LORA,
+  getPipelineParamsWithLora,
 } from "../services/scopeApi";
 import type {
   ConnectionStatus,
@@ -53,7 +53,7 @@ export function useScopeConnection(options: UseScopeConnectionOptions = {}) {
         try {
           // Try with LoRA first
           console.log("🎨 Trying to load pipeline with LoRA...");
-          await scopeApi.loadPipeline(pipelineId, PIPELINE_PARAMS_WITH_LORA);
+          await scopeApi.loadPipeline(pipelineId, getPipelineParamsWithLora());
           usedLora = true;
           console.log("✅ Pipeline loaded with LoRA");
         } catch (loraError) {

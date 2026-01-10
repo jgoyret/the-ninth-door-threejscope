@@ -7,8 +7,7 @@ import type {
   WebRTCOfferResponse,
   IceCandidate,
 } from "../types/scope";
-
-const SCOPE_URL = import.meta.env.VITE_SCOPE_URL;
+import { getScopeUrl } from "../stores/useScopeUrl";
 
 // VACE reference images config
 const VACE_REFERENCE_PATH = "/images/vace_reference";
@@ -30,17 +29,19 @@ export interface AssetInfo {
 
 // Store uploaded asset paths for later use
 let uploadedAssetPaths: Record<string, string> = {};
-const IS_RUNPOD = SCOPE_URL?.includes("runpod");
 
-// LoRA path based on environment
-const LORA_PATH = IS_RUNPOD
-  ? "/workspace/models/lora/kxsr_WAN1-3B_cinematic_chase.safetensors"
-  : "C:\\Users\\PC\\.daydream-scope\\models\\lora\\kxsr_WAN1-3B_cinematic_chase.safetensors";
+// LoRA path based on environment (checked dynamically)
+const getLoraPath = () => {
+  const isRunpod = getScopeUrl()?.includes("runpod");
+  return isRunpod
+    ? "/workspace/models/lora/kxsr_WAN1-3B_cinematic_chase.safetensors"
+    : "C:\\Users\\PC\\.daydream-scope\\models\\lora\\kxsr_WAN1-3B_cinematic_chase.safetensors";
+};
 
 export const scopeApi = {
   async getModelStatus(pipelineId: string): Promise<ModelStatus> {
     const res = await fetch(
-      `${SCOPE_URL}/api/v1/models/status?pipeline_id=${pipelineId}`
+      `${getScopeUrl()}/api/v1/models/status?pipeline_id=${pipelineId}`
     );
     return res.json();
   },
@@ -49,7 +50,7 @@ export const scopeApi = {
     pipelineId: string,
     loadParams: PipelineLoadParams
   ): Promise<{ message: string }> {
-    const res = await fetch(`${SCOPE_URL}/api/v1/pipeline/load`, {
+    const res = await fetch(`${getScopeUrl()}/api/v1/pipeline/load`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -61,17 +62,17 @@ export const scopeApi = {
   },
 
   async getPipelineStatus(): Promise<PipelineStatus> {
-    const res = await fetch(`${SCOPE_URL}/api/v1/pipeline/status`);
+    const res = await fetch(`${getScopeUrl()}/api/v1/pipeline/status`);
     return res.json();
   },
 
   async getIceServers(): Promise<IceServersResponse> {
-    const res = await fetch(`${SCOPE_URL}/api/v1/webrtc/ice-servers`);
+    const res = await fetch(`${getScopeUrl()}/api/v1/webrtc/ice-servers`);
     return res.json();
   },
 
   async sendOffer(request: WebRTCOfferRequest): Promise<WebRTCOfferResponse> {
-    const res = await fetch(`${SCOPE_URL}/api/v1/webrtc/offer`, {
+    const res = await fetch(`${getScopeUrl()}/api/v1/webrtc/offer`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(request),
@@ -83,7 +84,7 @@ export const scopeApi = {
     sessionId: string,
     candidates: IceCandidate[]
   ): Promise<void> {
-    await fetch(`${SCOPE_URL}/api/v1/webrtc/offer/${sessionId}`, {
+    await fetch(`${getScopeUrl()}/api/v1/webrtc/offer/${sessionId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ candidates }),
@@ -96,7 +97,7 @@ export const scopeApi = {
   ): Promise<UploadedAsset> {
     const encodedFilename = encodeURIComponent(filename);
     const res = await fetch(
-      `${SCOPE_URL}/api/v1/assets?filename=${encodedFilename}`,
+      `${getScopeUrl()}/api/v1/assets?filename=${encodedFilename}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/octet-stream" },
@@ -116,7 +117,7 @@ export const scopeApi = {
   },
 
   async getAssets(): Promise<AssetInfo[]> {
-    const res = await fetch(`${SCOPE_URL}/api/v1/assets`);
+    const res = await fetch(`${getScopeUrl()}/api/v1/assets`);
     if (!res.ok) {
       throw new Error(`Failed to get assets: ${res.statusText}`);
     }
@@ -181,15 +182,15 @@ export const DEFAULT_PIPELINE_PARAMS: PipelineLoadParams = {
   lora_merge_mode: "none",
 };
 
-// Params with LoRA (optional)
-export const PIPELINE_PARAMS_WITH_LORA: PipelineLoadParams = {
+// Params with LoRA (optional) - function to get dynamic path
+export const getPipelineParamsWithLora = (): PipelineLoadParams => ({
   ...DEFAULT_PIPELINE_PARAMS,
   lora_merge_mode: "permanent_merge",
   loras: [
     {
-      path: LORA_PATH,
+      path: getLoraPath(),
       scale: 1,
       merge_mode: "permanent_merge",
     },
   ],
-};
+});

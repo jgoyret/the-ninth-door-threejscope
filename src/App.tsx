@@ -44,6 +44,7 @@ function App() {
   }, []);
 
   useDebugGUI({
+    enabled: DEBUG_MODE,
     initialValues: { depthFar, streamSource, vaceScale },
     onChange: handleDebugChange,
   });
